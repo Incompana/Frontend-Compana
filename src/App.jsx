@@ -185,26 +185,48 @@ const GLOBAL_STYLES = `
 
 export default function App() {
   const [page, setPage] = useState("landing");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  
+  const handleLogin = () => {
+    setIsLoggedIn(true);
+    setPage("dashboard");
+  };
+
+  const handleAssessmentDone = () => {
+    if (isLoggedIn) {
+      setPage("dashboard");
+    } else {
+      setPage("guest-prompt");
+    }
+  }
 
   return (
     <>
       <style>{GLOBAL_STYLES}</style>
-      {page === "landing"             && <LandingPage             onNext={() => setPage("login")} />}
-      {page === "login"               && <LoginPage               onLogin={() => setPage("dashboard")} onRegister={() => setPage("register")} onForgotPassword={() => setPage("forgot-email")} />}
-      {page === "register"            && <RegisterPage            onLogin={() => setPage("login")} onForgotPassword={() => setPage("forgot-email")} />}
-      {page === "forgot-email"        && <ForgotPasswordEmailPage onLogin={() => setPage("login")} onSubmit={() => setPage("forgot-password")} />}
-      {page === "forgot-password"     && <ForgotPasswordPage      onLogin={() => setPage("login")} onSubmit={() => setPage("login")} />}
-      {page === "dashboard"           && <DashboardPage           onNavigate={(p) => setPage(p)} />}
-      {page === "input"               && <InputPage               onBack={() => setPage("dashboard")} onNext={() => setPage("assessment")} />}
-      {page === "assessment"          && <AssessmentPage          onBack={() => setPage("input")} onNext={() => setPage("loading")} />}
-      {page === "loading"             && <LoadingScreen            onSkip={() => setPage("hasil-analisis")} onDone={() => setPage("hasil-analisis")} />}
-      {page === "hasil-analisis"      && <HasilAnalisisPage        onLihatRoadmap={() => setPage("skill-gap")} onSimpan={() => setPage("skill-gap")} onSelesai={() => setPage("landing")} />}
-      {page === "skill-gap"           && <SkillGapPage             onBuatLearningPath={() => setPage("action-plan")} onExportPDF={() => {}} onBack={() => setPage("hasil-analisis")} />}
-      {page === "action-plan"         && <ActionPlanPage           onLanjutkan={() => setPage("task-detail")} onMulai={() => setPage("task-detail")} onLihatSemua={() => {}} onBack={() => setPage("skill-gap")} />}
-      {page === "task-detail"         && <TaskDetailPage           onBack={() => setPage("action-plan")} onSubmit={() => setPage("feedback")} />}
-      {page === "feedback"            && <FeedbackPage             onBack={() => setPage("action-plan")} onPerbaikiAI={() => setPage("dashboard-admin")} onSubmitUlang={() => setPage("task-detail")} onDone={() => setPage("dashboard-admin")} />}
-      {page === "dashboard-admin"     && <DashboardAdminPage       onNavigate={(p) => setPage(p)} />}
-      {page === "guest-prompt"        && <GuestPromptPage           onLogin={() => setPage("login")} onRegister={() => setPage("register")} onGoogle={() => setPage("dashboard-admin")} onSkip={() => setPage("landing")} />}
+ 
+      {/* ── Alur utama (guest & logged-in sama) ──────────────────────── */}
+      {page === "landing"         && <LandingPage    onNext={() => setPage("input")} />}
+      {page === "input"           && <InputPage      onBack={() => setPage("landing")} onNext={() => setPage("assessment")} />}
+      {page === "assessment"      && <AssessmentPage onBack={() => setPage("input")}   onNext={() => setPage("loading")} />}
+      {page === "loading"         && <LoadingScreen  onSkip={handleAssessmentDone}     onDone={handleAssessmentDone} />}
+ 
+      {/* ── Guest: hasil analisis → skill-gap → login-register prompt ── */}
+      {page === "guest-prompt"    && <GuestPromptPage onLogin={() => setPage("login")} onRegister={() => setPage("register")} onGoogle={handleLogin} onSkip={() => setPage("landing")} />}
+ 
+      {/* ── Auth ─────────────────────────────────────────────────────── */}
+      {page === "login"           && <LoginPage               onLogin={handleLogin} onRegister={() => setPage("register")} onForgotPassword={() => setPage("forgot-email")} />}
+      {page === "register"        && <RegisterPage            onLogin={() => setPage("login")} onForgotPassword={() => setPage("forgot-email")} />}
+      {page === "forgot-email"    && <ForgotPasswordEmailPage onLogin={() => setPage("login")} onSubmit={() => setPage("forgot-password")} />}
+      {page === "forgot-password" && <ForgotPasswordPage      onLogin={() => setPage("login")} onSubmit={() => setPage("login")} />}
+ 
+      {/* ── Logged-in: dashboard & fitur lanjutan ────────────────────── */}
+      {page === "dashboard"       && <DashboardPage      onNavigate={(p) => setPage(p)} />}
+      {page === "dashboard-admin" && <DashboardAdminPage onNavigate={(p) => setPage(p)} />}
+      {page === "hasil-analisis"  && <HasilAnalisisPage  onLihatRoadmap={() => setPage("skill-gap")} onSimpan={() => setPage("skill-gap")} onSelesai={() => setPage("landing")} />}
+      {page === "skill-gap"       && <SkillGapPage       onBuatLearningPath={() => setPage("action-plan")} onExportPDF={() => {}} onBack={() => setPage("hasil-analisis")} />}
+      {page === "action-plan"     && <ActionPlanPage     onLanjutkan={() => setPage("task-detail")} onMulai={() => setPage("task-detail")} onLihatSemua={() => {}} onBack={() => setPage("skill-gap")} />}
+      {page === "task-detail"     && <TaskDetailPage     onBack={() => setPage("action-plan")} onSubmit={() => setPage("feedback")} />}
+      {page === "feedback"        && <FeedbackPage       onBack={() => setPage("action-plan")} onPerbaikiAI={() => setPage("task-detail")} onSubmitUlang={() => setPage("task-detail")} />}
     </>
   );
 }
