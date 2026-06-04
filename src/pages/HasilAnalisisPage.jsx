@@ -1,5 +1,6 @@
 // src/pages/HasilAnalisisPage.jsx
 import { Logo, StarField } from "../components/Shared";
+import { getActionPlanView, getPretextView } from "../lib/aiViewModel";
 
 const DATA = {
   targetRole: "Frontend Developer",
@@ -71,8 +72,35 @@ const subValue = {
   marginTop: "2px",
 };
 
-export default function HasilAnalisisPage({ onLihatRoadmap, onSimpan, onSelesai }) {
-  const pct = DATA.confidenceScore;
+export default function HasilAnalisisPage({ analysis, onLihatRoadmap, onSimpan, onSelesai }) {
+  const pretextView = getPretextView(analysis);
+  const pretext = pretextView.raw || {};
+  const profile = analysis?.skill_profile || {};
+  const skillDetails = profile.skill_details || [];
+  const actionTasks = getActionPlanView(analysis).tasks || [];
+  const data = {
+    ...DATA,
+    targetRole: pretextView.targetRole || DATA.targetRole,
+    level: pretextView.currentLevel || DATA.level,
+    problemCategory: pretextView.problemCategory || DATA.problemCategory,
+    problemDesc: pretextView.blockerType || DATA.problemDesc,
+    confidenceScore: pretextView.confidenceScore || Math.round((profile.assessment_validation_score || 0.87) * 100),
+    confidenceLabel: pretextView.confidenceLabel || DATA.confidenceLabel,
+    persona: {
+      ...DATA.persona,
+      nama: pretextView.personaType || DATA.persona.nama,
+      skillSaatIni: skillDetails.map((item) => item.skill_id).join(", ") || DATA.persona.skillSaatIni,
+    },
+    langkah: actionTasks.length
+      ? actionTasks.map((task, index) => ({
+          no: index + 1,
+          text: `${task.title} — ${task.desc}`,
+          badge: task.duration || "Task",
+          badgeColor: index % 2 === 0 ? "#2d8c5e" : "#4a7a5a",
+        }))
+      : DATA.langkah,
+  };
+  const pct = data.confidenceScore;
 
   return (
     <div
@@ -234,8 +262,8 @@ export default function HasilAnalisisPage({ onLihatRoadmap, onSimpan, onSelesai 
                 💻
               </div>
               <p style={{ ...label, color: "rgba(40,60,50,0.5)" }}>Target Role</p>
-              <p style={{ ...value, color: "#2d8c5e" }}>{DATA.targetRole}</p>
-              <p style={{ ...subValue, color: "rgba(40,60,50,0.55)" }}>{DATA.level}</p>
+              <p style={{ ...value, color: "#2d8c5e" }}>{data.targetRole}</p>
+              <p style={{ ...subValue, color: "rgba(40,60,50,0.55)" }}>{data.level}</p>
             </div>
 
             {/* Problem Category */}
@@ -256,8 +284,8 @@ export default function HasilAnalisisPage({ onLihatRoadmap, onSimpan, onSelesai 
                 😕
               </div>
               <p style={{ ...label, color: "rgba(40,60,50,0.5)" }}>Problem Category</p>
-              <p style={{ ...value, color: "#c07030" }}>{DATA.problemCategory}</p>
-              <p style={{ ...subValue, color: "rgba(40,60,50,0.55)" }}>{DATA.problemDesc}</p>
+              <p style={{ ...value, color: "#c07030" }}>{data.problemCategory}</p>
+              <p style={{ ...subValue, color: "rgba(40,60,50,0.55)" }}>{data.problemDesc}</p>
             </div>
 
             {/* Confidence Score */}
@@ -308,7 +336,7 @@ export default function HasilAnalisisPage({ onLihatRoadmap, onSimpan, onSelesai 
                 />
               </div>
               <p style={{ ...subValue, color: "rgba(40,60,50,0.55)", fontSize: "11px" }}>
-                {DATA.confidenceLabel}
+                {data.confidenceLabel}
               </p>
             </div>
           </div>
@@ -353,12 +381,12 @@ export default function HasilAnalisisPage({ onLihatRoadmap, onSimpan, onSelesai 
               }}
             >
               {[
-                { lbl: "Nama Persona", val: DATA.persona.nama },
-                { lbl: "Tahap Karir", val: DATA.persona.tahapKarir },
-                { lbl: "Skill Saat Ini", val: DATA.persona.skillSaatIni },
-                { lbl: "Gaya Belajar", val: DATA.persona.gayaBelajar },
-                { lbl: "Waktu Tersedia", val: DATA.persona.waktuTersedia },
-                { lbl: "Target 6 Bulan", val: DATA.persona.target6Bulan },
+                { lbl: "Nama Persona", val: data.persona.nama },
+                { lbl: "Tahap Karir", val: data.persona.tahapKarir },
+                { lbl: "Skill Saat Ini", val: data.persona.skillSaatIni },
+                { lbl: "Gaya Belajar", val: data.persona.gayaBelajar },
+                { lbl: "Waktu Tersedia", val: data.persona.waktuTersedia },
+                { lbl: "Target 6 Bulan", val: data.persona.target6Bulan },
               ].map(({ lbl, val }) => (
                 <div
                   key={lbl}
@@ -421,7 +449,7 @@ export default function HasilAnalisisPage({ onLihatRoadmap, onSimpan, onSelesai 
               </span>
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {DATA.langkah.map((item) => (
+              {data.langkah.map((item) => (
                 <div
                   key={item.no}
                   style={{

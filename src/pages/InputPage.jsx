@@ -8,7 +8,9 @@ const TOPICS = [
   { icon: "📊", label: "Ingin naik jabatan" },
 ];
 
-export default function InputPage({ onBack, onNext }) {
+const DEMO_TEXT = "Saya ingin menjadi backend developer, tapi bingung apa saja yang harus dipelajari. Saya sudah belajar sekitar 2 tahun dan mengerti dasar SQL dan JavaScript, tetapi belum punya portofolio backend.";
+
+export default function InputPage({ onBack, onNext, onRunDemo, isDemoLoading = false }) {
   const [text, setText] = useState("");
 
   const handleTopicClick = (label) => {
@@ -110,11 +112,68 @@ export default function InputPage({ onBack, onNext }) {
                 className="cta-btn"
                 style={{ padding: "10px 22px", fontSize: "13px", animation: "none" }}
                 disabled={text.trim().length < 5}
-                onClick={onNext}
+                onClick={() => onNext(text.trim())}
               >
                 Analyze →
               </button>
             </div>
+          </div>
+
+          <div style={{
+            marginTop: "12px",
+            display: "grid",
+            gridTemplateColumns: "1fr auto",
+            gap: "10px",
+            alignItems: "center",
+            padding: "12px 14px",
+            borderRadius: "12px",
+            border: "1px solid rgba(61,186,116,0.22)",
+            background: "rgba(61,186,116,0.06)",
+            textAlign: "left",
+          }}>
+            <div>
+              <p style={{
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: "12px",
+                color: "rgba(255,255,255,0.78)",
+                marginBottom: "3px",
+                fontWeight: 600,
+              }}>
+                Use case end-to-end
+              </p>
+              <p style={{
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: "11px",
+                color: "rgba(255,255,255,0.42)",
+                lineHeight: 1.5,
+                margin: 0,
+              }}>
+                Backend developer → assessment → action plan → task portfolio → evaluasi.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setText(DEMO_TEXT);
+                if (onRunDemo) onRunDemo();
+              }}
+              disabled={isDemoLoading}
+              style={{
+                padding: "10px 14px",
+                borderRadius: "9px",
+                border: "1px solid rgba(61,186,116,0.35)",
+                background: "rgba(45,140,94,0.72)",
+                color: "white",
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: "12px",
+                fontWeight: 700,
+                cursor: isDemoLoading ? "wait" : "pointer",
+                opacity: isDemoLoading ? 0.65 : 1,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {isDemoLoading ? "Menjalankan..." : "Jalankan Demo →"}
+            </button>
           </div>
 
           {/* Topic chips */}

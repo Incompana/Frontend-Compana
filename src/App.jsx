@@ -16,6 +16,8 @@ import FeedbackPage from "./pages/FeedbackPage";
 import DashboardPage from "./pages/DashboardPage";
 import DashboardAdminPage from "./pages/DashboardAdminPage";
 import GuestPromptPage from "./pages/GuestPromptPage";
+import { evaluateTask, getEndToEndDemo } from "./lib/api";
+import { getActiveTaskView } from "./lib/aiViewModel";
 
 const GLOBAL_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
@@ -186,19 +188,115 @@ const GLOBAL_STYLES = `
 export default function App() {
   const [page, setPage] = useState("landing");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userInputText, setUserInputText] = useState("");
+  const [assessmentResult, setAssessmentResult] = useState(null);
+  const [taskEvaluation, setTaskEvaluation] = useState(null);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [isDemoLoading, setIsDemoLoading] = useState(false);
   
   const handleLogin = () => {
     setIsLoggedIn(true);
     setPage("dashboard");
   };
 
-  const handleAssessmentDone = () => {
-    if (isLoggedIn) {
-      setPage("dashboard");
-    } else {
-      setPage("guest-prompt");
-    }
+  const handleInputDone = (text) => {
+    setUserInputText(text);
+    setAssessmentResult(null);
+    setTaskEvaluation(null);
+    setSelectedTask(null);
+    setPage("assessment");
+  };
+
+  const handleAssessmentDone = (result) => {
+    setAssessmentResult(result);
+    setSelectedTask(null);
+    setPage("hasil-analisis");
   }
+
+  const formatFeedback = (evaluation, task) => {
+    const score = Number(evaluation.score || 0);
+    const passedCriteria = evaluation.criteria_results
+      ?.filter((item) => item.passed)
+      .map((item) => `Kriteria terpenuhi: ${item.criteria}`) || [];
+    const failedCriteria = evaluation.criteria_results
+      ?.filter((item) => !item.passed) || [];
+    const revisionFeedback = evaluation.revision_feedback?.length
+      ? evaluation.revision_feedback
+      : failedCriteria.map((item) => item.feedback_if_missing || item.criteria);
+    const dimensionScores = evaluation.dimension_scores?.length
+      ? evaluation.dimension_scores.map((item) => ({
+          label: item.label,
+          pct: Number(item.score || 0),
+          weight: Number(item.weight || 0),
+        }))
+      : [];
+    const fallbackScore = dimensionScores[0]?.pct ?? score;
+
+    return {
+      ...evaluation,
+      status: evaluation.status === "passed" ? "passed" : "need-revision",
+      breadcrumb: ["Action Plan", task?.taskId || task?.task_id || "Task", "Feedback"],
+      needRevision: {
+        title: "Need Revision",
+        desc: "Ada beberapa kriteria yang belum terpenuhi.",
+        xp: Math.max(20, Math.round(score * 0.8)),
+      },
+      contohPassed: {
+        title: "Passed!",
+        desc: "Semua kriteria utama terpenuhi. Langkah berikutnya sudah terbuka.",
+        xp: Math.max(80, Math.round(score)),
+      },
+      strengths: evaluation.positive_feedback?.length ? evaluation.positive_feedback : passedCriteria,
+      weaknesses: failedCriteria.map((item) => item.criteria),
+      saranPerbaikan: revisionFeedback,
+      dimensionScores,
+      skor: {
+        ketepatan: dimensionScores[0]?.pct ?? fallbackScore,
+        kelengkapan: dimensionScores[1]?.pct ?? fallbackScore,
+        kualitasKode: dimensionScores[2]?.pct ?? fallbackScore,
+      },
+    };
+  };
+
+  const handleRunDemo = async () => {
+    setIsDemoLoading(true);
+    try {
+      const demo = await getEndToEndDemo();
+      const firstTask = demo.action_plan?.recommended_tasks?.[0] || null;
+      const taskView = firstTask ? { taskId: firstTask.task_id, task_id: firstTask.task_id } : null;
+
+      setUserInputText(demo.use_case?.user_input_text || demo.input?.user_input_text || "");
+      setAssessmentResult(demo);
+      setSelectedTask(null);
+      setTaskEvaluation(formatFeedback(demo.demo_evaluation || {}, taskView));
+      setPage("action-plan");
+    } catch (error) {
+      setAssessmentResult({
+        pretext_analysis: { target_role: "backend_developer", problem_category: "direction_confused" },
+        action_plan: { recommended_tasks: [] },
+        _demo_error: error.message,
+      });
+      setPage("input");
+    } finally {
+      setIsDemoLoading(false);
+    }
+  };
+
+  const handleStartTask = (task) => {
+    setSelectedTask(task || null);
+    setPage("task-detail");
+  };
+
+  const handleTaskSubmit = async ({ notes, file }) => {
+    const task = getActiveTaskView(assessmentResult, selectedTask);
+    const evaluation = await evaluateTask({
+      taskId: task?.taskId || "T3",
+      submissionText: notes || "",
+      submissionFiles: file ? [file.name] : [],
+    });
+    setTaskEvaluation(formatFeedback(evaluation, task));
+    setPage("feedback");
+  };
 
   return (
     <>
@@ -206,9 +304,9 @@ export default function App() {
  
       {/* ── Alur utama (guest & logged-in sama) ──────────────────────── */}
       {page === "landing"         && <LandingPage    onNext={() => setPage("input")} />}
-      {page === "input"           && <InputPage      onBack={() => setPage("landing")} onNext={() => setPage("assessment")} />}
-      {page === "assessment"      && <AssessmentPage onBack={() => setPage("input")}   onNext={() => setPage("loading")} />}
-      {page === "loading"         && <LoadingScreen  onSkip={handleAssessmentDone}     onDone={handleAssessmentDone} />}
+      {page === "input"           && <InputPage      onBack={() => setPage("landing")} onNext={handleInputDone} onRunDemo={handleRunDemo} isDemoLoading={isDemoLoading} />}
+      {page === "assessment"      && <AssessmentPage userInputText={userInputText} onBack={() => setPage("input")} onNext={handleAssessmentDone} />}
+      {page === "loading"         && <LoadingScreen  onSkip={() => setPage("hasil-analisis")} onDone={() => setPage("hasil-analisis")} />}
  
       {/* ── Guest: hasil analisis → skill-gap → login-register prompt ── */}
       {page === "guest-prompt"    && <GuestPromptPage onLogin={() => setPage("login")} onRegister={() => setPage("register")} onGoogle={handleLogin} onSkip={() => setPage("landing")} />}
@@ -222,11 +320,11 @@ export default function App() {
       {/* ── Logged-in: dashboard & fitur lanjutan ────────────────────── */}
       {page === "dashboard"       && <DashboardPage      onNavigate={(p) => setPage(p)} />}
       {page === "dashboard-admin" && <DashboardAdminPage onNavigate={(p) => setPage(p)} />}
-      {page === "hasil-analisis"  && <HasilAnalisisPage  onLihatRoadmap={() => setPage("skill-gap")} onSimpan={() => setPage("skill-gap")} onSelesai={() => setPage("landing")} />}
-      {page === "skill-gap"       && <SkillGapPage       onBuatLearningPath={() => setPage("action-plan")} onExportPDF={() => {}} onBack={() => setPage("hasil-analisis")} />}
-      {page === "action-plan"     && <ActionPlanPage     onLanjutkan={() => setPage("task-detail")} onMulai={() => setPage("task-detail")} onLihatSemua={() => {}} onBack={() => setPage("skill-gap")} />}
-      {page === "task-detail"     && <TaskDetailPage     onBack={() => setPage("action-plan")} onSubmit={() => setPage("feedback")} />}
-      {page === "feedback"        && <FeedbackPage       onBack={() => setPage("action-plan")} onPerbaikiAI={() => setPage("task-detail")} onSubmitUlang={() => setPage("task-detail")} />}
+      {page === "hasil-analisis"  && <HasilAnalisisPage analysis={assessmentResult} onLihatRoadmap={() => setPage("skill-gap")} onSimpan={() => setPage("skill-gap")} onSelesai={() => setPage("landing")} />}
+      {page === "skill-gap"       && <SkillGapPage analysis={assessmentResult} onBuatLearningPath={() => setPage("action-plan")} onExportPDF={() => {}} onBack={() => setPage("hasil-analisis")} />}
+      {page === "action-plan"     && <ActionPlanPage analysis={assessmentResult} onLanjutkan={() => handleStartTask(selectedTask)} onMulai={handleStartTask} onLihatSemua={() => {}} onBack={() => setPage("skill-gap")} />}
+      {page === "task-detail"     && <TaskDetailPage analysis={assessmentResult} task={selectedTask} onBack={() => setPage("action-plan")} onSubmit={handleTaskSubmit} />}
+      {page === "feedback"        && <FeedbackPage feedback={taskEvaluation} onBack={() => setPage("action-plan")} onPerbaikiAI={() => setPage("task-detail")} onSubmitUlang={() => setPage("task-detail")} />}
     </>
   );
 }

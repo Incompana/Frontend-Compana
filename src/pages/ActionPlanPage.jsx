@@ -1,6 +1,7 @@
 // src/pages/ActionPlanPage.jsx
 import { useState } from "react";
 import { Logo, StarField } from "../components/Shared";
+import { getActionPlanView } from "../lib/aiViewModel";
 
 const PHASES = [
   {
@@ -67,19 +68,29 @@ const PHASES = [
   },
 ];
 
-const TOTAL_STEPS = PHASES.flatMap((p) => p.steps).length;
-const DONE_STEPS = 2;
-
 const statusConfig = {
   selesai: { bg: "rgba(61,186,116,0.15)", border: "rgba(61,186,116,0.4)", icon: "✓", iconBg: "#3dba74", badgeColor: "#3dba74", badgeBg: "rgba(61,186,116,0.15)", badgeText: "✓ Selesai" },
   berjalan: { bg: "rgba(255,255,255,0.04)", border: "rgba(255,255,255,0.12)", icon: "▶", iconBg: "#4a9c6a", badgeColor: "#a8d8b8", badgeBg: "rgba(61,186,116,0.1)", badgeText: "▷ Sedang Berjalan" },
   terkunci: { bg: "rgba(255,255,255,0.02)", border: "rgba(255,255,255,0.06)", icon: "🔒", iconBg: "#3a5a4a", badgeColor: "rgba(255,255,255,0.3)", badgeBg: "rgba(255,255,255,0.06)", badgeText: "🔒 Terkunci" },
 };
 
-export default function ActionPlanPage({ onLanjutkan, onMulai, onLihatSemua, onBack }) {
-  const [expanded, setExpanded] = useState("s3");
+export default function ActionPlanPage({ analysis, onLanjutkan, onMulai, onLihatSemua, onBack }) {
+  const plan = getActionPlanView(analysis);
+  const phases = plan.tasks.length
+    ? [
+        {
+          id: "dynamic",
+          label: "PHASE 1 — LANGKAH PRIORITAS",
+          steps: plan.tasks,
+        },
+      ]
+    : PHASES;
+  const totalSteps = phases.flatMap((p) => p.steps).length;
+  const doneSteps = phases.flatMap((p) => p.steps).filter((step) => step.status === "selesai").length;
+  const activeStep = phases.flatMap((p) => p.steps).find((step) => step.status === "berjalan");
+  const [expanded, setExpanded] = useState(activeStep?.id || "s3");
 
-  const pct = Math.round((DONE_STEPS / TOTAL_STEPS) * 100);
+  const pct = totalSteps ? Math.round((doneSteps / totalSteps) * 100) : 0;
 
   return (
     <div
@@ -130,7 +141,7 @@ export default function ActionPlanPage({ onLanjutkan, onMulai, onLihatSemua, onB
           onMouseEnter={(e) => (e.target.style.color = "rgba(255,255,255,0.95)")}
           onMouseLeave={(e) => (e.target.style.color = "rgba(255,255,255,0.55)")}
         >
-          Frontend Developer
+          {plan.targetRole}
         </button>
       </nav>
 
@@ -224,7 +235,7 @@ export default function ActionPlanPage({ onLanjutkan, onMulai, onLihatSemua, onB
                   color: "rgba(255,255,255,0.45)",
                 }}
               >
-                {DONE_STEPS} dari {TOTAL_STEPS} langkah selesai
+                {doneSteps} dari {totalSteps} langkah selesai
               </span>
               <span
                 style={{
@@ -257,7 +268,7 @@ export default function ActionPlanPage({ onLanjutkan, onMulai, onLihatSemua, onB
           </div>
 
           {/* Phases */}
-          {PHASES.map((phase, pi) => (
+          {phases.map((phase) => (
             <div key={phase.id} style={{ marginBottom: "16px" }}>
               {/* Phase label */}
               <p
@@ -456,7 +467,7 @@ export default function ActionPlanPage({ onLanjutkan, onMulai, onLihatSemua, onB
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      if (onMulai) onMulai(step);
+                  if (onMulai) onMulai(step);
                                     }}
                                     style={{
                                       padding: "6px 14px",

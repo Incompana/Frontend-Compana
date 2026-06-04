@@ -1,6 +1,7 @@
 // src/pages/TaskDetailPage.jsx
 import { useState } from "react";
 import { Logo, StarField } from "../components/Shared";
+import { getActiveTaskView } from "../lib/aiViewModel";
 
 const TASK_DATA = {
   breadcrumb: ["Action Plan", "Phase 1", "Langkah 3"],
@@ -79,12 +80,13 @@ const sectionCard = {
   marginBottom: "10px",
 };
 
-export default function TaskDetailPage({ task, onBack, onSubmit }) {
+export default function TaskDetailPage({ task, analysis, onBack, onSubmit }) {
   const [notes, setNotes] = useState("");
   const [file, setFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  const data = task || TASK_DATA;
+  const data = getActiveTaskView(analysis, task) || TASK_DATA;
+  const demoSubmission = analysis?.demo_task_submission?.submission_text || "";
 
   const handleFileDrop = (e) => {
     e.preventDefault();
@@ -273,7 +275,7 @@ export default function TaskDetailPage({ task, onBack, onSubmit }) {
             </div>
             {/* Tags + meta */}
             <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-              {data.tags.map((t) => (
+              {(data.tags || []).map((t) => (
                 <span
                   key={t}
                   style={{
@@ -428,6 +430,62 @@ export default function TaskDetailPage({ task, onBack, onSubmit }) {
             </div>
           </div>
 
+          {/* Kriteria Penilaian */}
+          {data.sections.assessmentChecklist?.length > 0 && (
+            <div style={{ ...sectionCard }}>
+              <SectionLabel color="#3dba74">Kriteria Penilaian</SectionLabel>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {data.sections.assessmentChecklist.map((item, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: "10px",
+                      padding: "8px 12px",
+                      background: "rgba(61,186,116,0.05)",
+                      border: "1px solid rgba(61,186,116,0.14)",
+                      borderRadius: "8px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: "18px",
+                        height: "18px",
+                        borderRadius: "50%",
+                        border: "1.5px solid rgba(61,186,116,0.45)",
+                        color: "#3dba74",
+                        fontFamily: "'DM Sans', sans-serif",
+                        fontSize: "10px",
+                        fontWeight: 700,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                        marginTop: "1px",
+                      }}
+                    >
+                      ✓
+                    </span>
+                    <span
+                      style={{
+                        fontFamily: "'DM Sans', sans-serif",
+                        fontSize: "13px",
+                        color: "rgba(255,255,255,0.72)",
+                        lineHeight: 1.55,
+                        textDecoration: "underline",
+                        textDecorationColor: "rgba(255,255,255,0.15)",
+                        textUnderlineOffset: "3px",
+                      }}
+                    >
+                      {item}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Referensi Belajar */}
           <div style={{ ...sectionCard }}>
             <SectionLabel color="#3dba74">Referensi Belajar</SectionLabel>
@@ -481,6 +539,29 @@ export default function TaskDetailPage({ task, onBack, onSubmit }) {
           {/* Submit Task */}
           <div style={{ ...sectionCard }}>
             <SectionLabel color="#3dba74">Submit Task</SectionLabel>
+
+            {demoSubmission && (
+              <button
+                type="button"
+                onClick={() => setNotes(demoSubmission)}
+                style={{
+                  width: "100%",
+                  marginBottom: "10px",
+                  padding: "10px 12px",
+                  borderRadius: "10px",
+                  border: "1px solid rgba(61,186,116,0.28)",
+                  background: "rgba(61,186,116,0.08)",
+                  color: "rgba(255,255,255,0.78)",
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  textAlign: "left",
+                }}
+              >
+                Isi contoh submission use case →
+              </button>
+            )}
 
             {/* Upload area */}
             <div

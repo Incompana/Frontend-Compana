@@ -85,6 +85,13 @@ const ScoreBar = ({ label, pct, color }) => (
 export default function FeedbackPage({ feedback, onPerbaikiAI, onSubmitUlang, onBack, onDone }) {
   const data = feedback || FEEDBACK_DATA;
   const isPassed = data.status === "passed";
+  const scoreBars = data.dimensionScores?.length
+    ? data.dimensionScores
+    : [
+        { label: "Ketepatan", pct: data.skor.ketepatan },
+        { label: "Kelengkapan", pct: data.skor.kelengkapan },
+        { label: "Kualitas Kode", pct: data.skor.kualitasKode },
+      ];
 
   return (
     <div
@@ -577,25 +584,27 @@ export default function FeedbackPage({ feedback, onPerbaikiAI, onSubmitUlang, on
                 display: "flex",
                 borderTop: "1px solid rgba(0,0,0,0.07)",
                 paddingTop: "14px",
+                flexWrap: "wrap",
+                rowGap: "14px",
               }}
             >
-              <ScoreBar
-                label="Ketepatan"
-                pct={data.skor.ketepatan}
-                color="linear-gradient(90deg,#7c6fe0,#a89cf0)"
-              />
-              <div style={{ width: "1px", background: "rgba(0,0,0,0.07)", margin: "0 4px" }} />
-              <ScoreBar
-                label="Kelengkapan"
-                pct={data.skor.kelengkapan}
-                color="linear-gradient(90deg,#d4a844,#f0c85c)"
-              />
-              <div style={{ width: "1px", background: "rgba(0,0,0,0.07)", margin: "0 4px" }} />
-              <ScoreBar
-                label="Kualitas Kode"
-                pct={data.skor.kualitasKode}
-                color="linear-gradient(90deg,#2d8c5e,#3dba74)"
-              />
+              {scoreBars.map((item, index) => (
+                <div key={item.label} style={{ display: "contents" }}>
+                  <ScoreBar
+                    label={item.weight ? `${item.label} (${item.weight}%)` : item.label}
+                    pct={item.pct}
+                    color={[
+                      "linear-gradient(90deg,#7c6fe0,#a89cf0)",
+                      "linear-gradient(90deg,#d4a844,#f0c85c)",
+                      "linear-gradient(90deg,#2d8c5e,#3dba74)",
+                      "linear-gradient(90deg,#4c9ab8,#72c6dc)",
+                    ][index % 4]}
+                  />
+                  {index < scoreBars.length - 1 && (
+                    <div style={{ width: "1px", background: "rgba(0,0,0,0.07)", margin: "0 4px" }} />
+                  )}
+                </div>
+              ))}
             </div>
           </div>
 

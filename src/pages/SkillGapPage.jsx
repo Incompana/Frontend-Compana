@@ -1,5 +1,6 @@
 // src/pages/SkillGapPage.jsx
 import { Logo, StarField } from "../components/Shared";
+import { getSkillGapView } from "../lib/aiViewModel";
 
 const DATA = {
   targetRole: "Frontend Developer",
@@ -41,7 +42,15 @@ const ProgressBar = ({ pct, color }) => (
   </div>
 );
 
-export default function SkillGapPage({ onBuatLearningPath, onExportPDF, onBack }) {
+export default function SkillGapPage({ analysis, onBuatLearningPath, onExportPDF, onBack }) {
+  const dynamicData = getSkillGapView(analysis);
+  const data = {
+    targetRole: dynamicData.targetRole || DATA.targetRole,
+    missing: dynamicData.missing.length ? dynamicData.missing : DATA.missing,
+    weak: dynamicData.weak.length ? dynamicData.weak : DATA.weak,
+    owned: dynamicData.owned.length ? dynamicData.owned.map((skill) => skill.name) : DATA.owned,
+  };
+
   return (
     <div
       style={{
@@ -91,7 +100,7 @@ export default function SkillGapPage({ onBuatLearningPath, onExportPDF, onBack }
           onMouseEnter={(e) => (e.target.style.color = "rgba(255,255,255,0.95)")}
           onMouseLeave={(e) => (e.target.style.color = "rgba(255,255,255,0.55)")}
         >
-          {DATA.targetRole}
+          {data.targetRole}
         </button>
       </nav>
 
@@ -165,7 +174,7 @@ export default function SkillGapPage({ onBuatLearningPath, onExportPDF, onBack }
                 textDecorationColor: "rgba(255,255,255,0.15)",
               }}
             >
-              Ini adalah skill yang perlu diperkuat untuk menjadi {DATA.targetRole}. Fokus pada yang merah dulu.
+              Ini adalah skill yang perlu diperkuat untuk menjadi {data.targetRole}. Fokus pada yang merah dulu.
             </p>
           </div>
 
@@ -179,9 +188,9 @@ export default function SkillGapPage({ onBuatLearningPath, onExportPDF, onBack }
             }}
           >
             {[
-              { icon: "✕", label: "MISSING", count: DATA.missing.length, color: "#e05a5a", bg: "rgba(220,80,80,0.1)", border: "rgba(220,80,80,0.3)" },
-              { icon: "=", label: "WEAK", count: DATA.weak.length, color: "#d4a844", bg: "rgba(212,168,68,0.1)", border: "rgba(212,168,68,0.3)" },
-              { icon: "✓", label: "OWNED", count: DATA.owned.length, color: "#3dba74", bg: "rgba(61,186,116,0.1)", border: "rgba(61,186,116,0.3)" },
+              { icon: "✕", label: "MISSING", count: data.missing.length, color: "#e05a5a", bg: "rgba(220,80,80,0.1)", border: "rgba(220,80,80,0.3)" },
+              { icon: "=", label: "WEAK", count: data.weak.length, color: "#d4a844", bg: "rgba(212,168,68,0.1)", border: "rgba(212,168,68,0.3)" },
+              { icon: "✓", label: "OWNED", count: data.owned.length, color: "#3dba74", bg: "rgba(61,186,116,0.1)", border: "rgba(61,186,116,0.3)" },
             ].map(({ icon, label, count, color, bg, border }) => (
               <div
                 key={label}
@@ -303,11 +312,11 @@ export default function SkillGapPage({ onBuatLearningPath, onExportPDF, onBack }
                     borderRadius: "999px",
                   }}
                 >
-                  {DATA.missing.length} skill
+                  {data.missing.length} skill
                 </span>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                {DATA.missing.map((s) => (
+                {data.missing.map((s) => (
                   <div key={s.name}>
                     <div
                       style={{
@@ -410,11 +419,11 @@ export default function SkillGapPage({ onBuatLearningPath, onExportPDF, onBack }
                     borderRadius: "999px",
                   }}
                 >
-                  {DATA.weak.length} skill
+                  {data.weak.length} skill
                 </span>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                {DATA.weak.map((s) => (
+                {data.weak.map((s) => (
                   <div key={s.name}>
                     <div
                       style={{
@@ -522,11 +531,11 @@ export default function SkillGapPage({ onBuatLearningPath, onExportPDF, onBack }
                   borderRadius: "999px",
                 }}
               >
-                {DATA.owned.length} skill
+                {data.owned.length} skill
               </span>
             </div>
             <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-              {DATA.owned.map((s) => (
+              {data.owned.map((s) => (
                 <div
                   key={s}
                   style={{
