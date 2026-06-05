@@ -19,7 +19,7 @@ const ProgressBar = ({ pct, color }) => (
     <div
       style={{
         height: "100%",
-        width: `${pct}%`,
+        width: `${Math.min(Math.max(pct || 0, 0), 100)}%`,
         borderRadius: "999px",
         background: color,
         transition: "width 0.8s ease",
@@ -28,19 +28,141 @@ const ProgressBar = ({ pct, color }) => (
   </div>
 );
 
-const buildMissingSkills = (skillGap) => {
-  return skillGap.map((skill, index) => ({
-    name: skill,
-    pct: index === 0 ? 10 : index === 1 ? 5 : 0,
-  }));
+const parseLocalAssessmentResult = () => {
+  try {
+    const saved = localStorage.getItem("lastAssessmentResult");
+    return saved ? JSON.parse(saved) : null;
+  } catch {
+    return null;
+  }
 };
 
-const DEFAULT_WEAK_SKILLS = [
-  { name: "Problem Solving", pct: 35 },
-  { name: "Debugging", pct: 25 },
-];
+const getSkillName = (skill) => {
+  if (typeof skill === "string") return skill;
 
-const DEFAULT_OWNED_SKILLS = ["HTML Basic", "CSS Basic"];
+  return (
+    skill?.skill_name ||
+    skill?.name ||
+    skill?.skillId ||
+    skill?.skill_id ||
+    "Skill"
+  );
+};
+
+const getSkillProgress = (skill, fallback = 0) => {
+  if (typeof skill === "string") return fallback;
+
+  if (typeof skill?.progress === "number") return skill.progress;
+  if (typeof skill?.score === "number") return skill.score;
+  if (typeof skill?.level === "number") return skill.level * 50;
+
+  return fallback;
+};
+
+const normalizeSkillItem = (skill, fallbackPct = 0) => ({
+  name: getSkillName(skill),
+  pct: getSkillProgress(skill, fallbackPct),
+  priority: typeof skill === "object" ? skill?.priority : undefined,
+  reason: typeof skill === "object" ? skill?.reason : undefined,
+  evidence: typeof skill === "object" ? skill?.evidence || [] : [],
+  nextTaskId: typeof skill === "object" ? skill?.next_task_id : undefined,
+});
+
+const normalizeSkillGapData = (apiData, localData) => {
+  const source = apiData || localData || {};
+
+  const ai =
+    source.ai ||
+    source.rawAi ||
+    source.assessmentAi ||
+    localData?.ai ||
+    {};
+
+  const aiSkillGap = ai.skill_gap || source.skill_gap || {};
+  const aiAnalysis =
+    ai.validated_context?.validated_analysis ||
+    source.analysis ||
+    {};
+
+  const targetRole =
+    source.targetRole ||
+    source.target_role ||
+    source.analysis?.role ||
+    aiAnalysis.target_role ||
+    aiSkillGap.target_role ||
+    "Belum ditentukan";
+
+  const confidenceScore =
+    source.confidenceScore ||
+    source.confidence_score ||
+    source.analysis?.confidence ||
+    aiAnalysis.confidence_score ||
+    0;
+
+  const missingRaw =
+    aiSkillGap.missing_skills ||
+    source.missingSkills ||
+    source.missing_skills ||
+    source.skillGap ||
+    source.skill_gap ||
+    localData?.skillGap ||
+    [];
+
+  const weakRaw =
+    aiSkillGap.weak_skills ||
+    source.weakSkills ||
+    source.weak_skills ||
+    [];
+
+  const ownedRaw =
+    aiSkillGap.owned_skills ||
+    source.ownedSkills ||
+    source.owned_skills ||
+    [];
+
+  const missingSkills = Array.isArray(missingRaw)
+    ? missingRaw.map((skill) => normalizeSkillItem(skill, 0))
+    : [];
+
+  const weakSkills = Array.isArray(weakRaw)
+    ? weakRaw.map((skill) => normalizeSkillItem(skill, 50))
+    : [];
+
+  const ownedSkills = Array.isArray(ownedRaw)
+    ? ownedRaw.map((skill) => normalizeSkillItem(skill, 100))
+    : [];
+
+  return {
+    targetRole,
+    confidenceScore,
+    problemCategory:
+      aiSkillGap.problem_category ||
+      source.problemCategory ||
+      source.problem_category ||
+      source.analysis?.problemCategory ||
+      "Skill Gap",
+    blockerType:
+      aiSkillGap.blocker_type ||
+      source.analysis?.blockerType ||
+      null,
+    readinessScore:
+      aiSkillGap.readiness_score ??
+      source.readinessScore ??
+      0,
+    priorityGap:
+      aiSkillGap.priority_gap ||
+      source.priorityGap ||
+      null,
+    summary:
+      source.analysis?.summary ||
+      aiAnalysis.summary ||
+      "",
+    missingSkills,
+    weakSkills,
+    ownedSkills,
+    raw: source,
+  };
+};
 
 export default function SkillGapPage() {
   const navigate = useNavigate();
@@ -52,15 +174,21 @@ export default function SkillGapPage() {
     const fetchSkillGap = async () => {
       try {
         const res = await api.get("/skill-gap/me");
-
         setSkillGapData(res.data.data);
       } catch (error) {
         console.log(error.response?.data || error.message);
 
-        toast.error(
-          error.response?.data?.message ||
-            "Gagal mengambil data skill gap"
-        );
+        const localResult = parseLocalAssessmentResult();
+
+        if (localResult) {
+          setSkillGapData(localResult);
+          toast("Menampilkan skill gap dari hasil assessment terakhir.");
+        } else {
+          toast.error(
+            error.response?.data?.message ||
+              "Gagal mengambil data skill gap"
+          );
+        }
       } finally {
         setLoading(false);
       }
@@ -69,22 +197,26 @@ export default function SkillGapPage() {
     fetchSkillGap();
   }, []);
 
-  const targetRole =
-    skillGapData?.targetRole || "Belum ditentukan";
+  const localAssessmentResult = useMemo(() => {
+    return parseLocalAssessmentResult();
+  }, []);
 
-  const confidenceScore =
-    skillGapData?.confidenceScore || 0;
+  const normalized = useMemo(() => {
+    return normalizeSkillGapData(skillGapData, localAssessmentResult);
+  }, [skillGapData, localAssessmentResult]);
 
-  const skillGap = useMemo(() => {
-    return skillGapData?.skillGap || [];
-  }, [skillGapData]);
-
-  const missingSkills = useMemo(() => {
-    return buildMissingSkills(skillGap);
-  }, [skillGap]);
-
-  const weakSkills = DEFAULT_WEAK_SKILLS;
-  const ownedSkills = DEFAULT_OWNED_SKILLS;
+  const {
+    targetRole,
+    confidenceScore,
+    problemCategory,
+    blockerType,
+    readinessScore,
+    priorityGap,
+    summary,
+    missingSkills,
+    weakSkills,
+    ownedSkills,
+  } = normalized;
 
   const handleCreateLearningPath = () => {
     navigate("/action-plan");
@@ -95,7 +227,7 @@ export default function SkillGapPage() {
   };
 
   const handleBack = () => {
-    navigate("/dashboard");
+    navigate("/dashboardUser");
   };
 
   if (loading) {
@@ -127,7 +259,6 @@ export default function SkillGapPage() {
         overflowX: "hidden",
       }}
     >
-      {/* Nav */}
       <nav
         style={{
           display: "flex",
@@ -168,7 +299,6 @@ export default function SkillGapPage() {
         </button>
       </nav>
 
-      {/* Body */}
       <div
         style={{
           position: "relative",
@@ -187,11 +317,10 @@ export default function SkillGapPage() {
             position: "relative",
             zIndex: 1,
             width: "100%",
-            maxWidth: "680px",
+            maxWidth: "720px",
             animation: "slideUp 0.6s ease both",
           }}
         >
-          {/* Icon + Title */}
           <div style={{ textAlign: "center", marginBottom: "28px" }}>
             <div
               style={{
@@ -236,8 +365,8 @@ export default function SkillGapPage() {
                 fontFamily: "'DM Sans', sans-serif",
                 fontSize: "13px",
                 color: "rgba(255,255,255,0.5)",
-                textDecoration: "underline",
-                textDecorationColor: "rgba(255,255,255,0.15)",
+                lineHeight: 1.7,
+                margin: 0,
               }}
             >
               Ini adalah skill yang perlu diperkuat untuk menjadi{" "}
@@ -247,19 +376,45 @@ export default function SkillGapPage() {
               .
             </p>
 
-            <p
+            <div
               style={{
-                fontFamily: "'DM Sans', sans-serif",
-                fontSize: "12px",
-                color: "rgba(255,255,255,0.35)",
-                marginTop: "8px",
+                display: "flex",
+                justifyContent: "center",
+                gap: "10px",
+                flexWrap: "wrap",
+                marginTop: "10px",
               }}
             >
-              Confidence Score: {confidenceScore}%
-            </p>
+              <span
+                style={{
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: "12px",
+                  color: "rgba(255,255,255,0.45)",
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: "999px",
+                  padding: "5px 12px",
+                }}
+              >
+                Confidence: {confidenceScore}%
+              </span>
+
+              <span
+                style={{
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: "12px",
+                  color: "rgba(255,255,255,0.45)",
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: "999px",
+                  padding: "5px 12px",
+                }}
+              >
+                Readiness: {readinessScore}%
+              </span>
+            </div>
           </div>
 
-          {/* Summary */}
           <div
             style={{
               display: "grid",
@@ -332,6 +487,8 @@ export default function SkillGapPage() {
                       margin: 0,
                       color: item.color,
                       fontSize: "22px",
+                      fontFamily: "'Playfair Display', serif",
+                      fontWeight: 700,
                     }}
                   >
                     {item.count}
@@ -341,7 +498,73 @@ export default function SkillGapPage() {
             ))}
           </div>
 
-          {/* Missing + Weak */}
+          <div
+            style={{
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: "14px",
+              padding: "16px 18px",
+              marginBottom: "12px",
+            }}
+          >
+            <p
+              style={{
+                color: "#3dba74",
+                margin: "0 0 8px",
+                fontWeight: 700,
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: "13px",
+              }}
+            >
+              Ringkasan AI
+            </p>
+
+            <p
+              style={{
+                margin: 0,
+                color: "rgba(255,255,255,0.58)",
+                fontSize: "13px",
+                lineHeight: 1.7,
+              }}
+            >
+              Problem Category:{" "}
+              <span style={{ color: "rgba(255,255,255,0.82)" }}>
+                {problemCategory}
+              </span>
+              {blockerType ? (
+                <>
+                  {" "}
+                  · Blocker:{" "}
+                  <span style={{ color: "rgba(255,255,255,0.82)" }}>
+                    {blockerType}
+                  </span>
+                </>
+              ) : null}
+              {priorityGap ? (
+                <>
+                  {" "}
+                  · Prioritas:{" "}
+                  <span style={{ color: "#3dba74" }}>
+                    {priorityGap}
+                  </span>
+                </>
+              ) : null}
+            </p>
+
+            {summary && (
+              <p
+                style={{
+                  margin: "8px 0 0",
+                  color: "rgba(255,255,255,0.42)",
+                  fontSize: "12px",
+                  lineHeight: 1.6,
+                }}
+              >
+                {summary}
+              </p>
+            )}
+          </div>
+
           <div
             style={{
               display: "grid",
@@ -350,7 +573,6 @@ export default function SkillGapPage() {
               marginBottom: "12px",
             }}
           >
-            {/* Missing */}
             <div
               style={{
                 background: "rgba(255,255,255,0.05)",
@@ -359,18 +581,26 @@ export default function SkillGapPage() {
                 padding: "16px 18px",
               }}
             >
-              <p style={{ color: "#e05a5a", marginBottom: "10px" }}>
+              <p
+                style={{
+                  color: "#e05a5a",
+                  margin: "0 0 10px",
+                  fontWeight: 700,
+                }}
+              >
                 Missing Skills
               </p>
 
               {missingSkills.length > 0 ? (
                 missingSkills.map((skill) => (
-                  <div key={skill.name} style={{ marginBottom: "10px" }}>
+                  <div key={skill.name} style={{ marginBottom: "14px" }}>
                     <div
                       style={{
                         display: "flex",
                         justifyContent: "space-between",
+                        gap: "10px",
                         fontSize: "13px",
+                        marginBottom: "6px",
                       }}
                     >
                       <span>{skill.name}</span>
@@ -378,6 +608,58 @@ export default function SkillGapPage() {
                     </div>
 
                     <ProgressBar pct={skill.pct} color="#e05a5a" />
+
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "6px",
+                        flexWrap: "wrap",
+                        marginTop: "7px",
+                      }}
+                    >
+                      {skill.priority && (
+                        <span
+                          style={{
+                            fontSize: "10px",
+                            color: "#e05a5a",
+                            background: "rgba(224,90,90,0.12)",
+                            border: "1px solid rgba(224,90,90,0.25)",
+                            padding: "3px 8px",
+                            borderRadius: "999px",
+                          }}
+                        >
+                          {skill.priority}
+                        </span>
+                      )}
+
+                      {skill.nextTaskId && (
+                        <span
+                          style={{
+                            fontSize: "10px",
+                            color: "rgba(255,255,255,0.55)",
+                            background: "rgba(255,255,255,0.07)",
+                            border: "1px solid rgba(255,255,255,0.12)",
+                            padding: "3px 8px",
+                            borderRadius: "999px",
+                          }}
+                        >
+                          Next: {skill.nextTaskId}
+                        </span>
+                      )}
+                    </div>
+
+                    {skill.reason && (
+                      <p
+                        style={{
+                          margin: "7px 0 0",
+                          fontSize: "11px",
+                          lineHeight: 1.5,
+                          color: "rgba(255,255,255,0.38)",
+                        }}
+                      >
+                        {skill.reason}
+                      </p>
+                    )}
                   </div>
                 ))
               ) : (
@@ -388,13 +670,11 @@ export default function SkillGapPage() {
                     lineHeight: 1.6,
                   }}
                 >
-                  Belum ada skill gap. Selesaikan assessment untuk melihat
-                  hasilnya.
+                  Tidak ada missing skill dari hasil AI.
                 </p>
               )}
             </div>
 
-            {/* Weak */}
             <div
               style={{
                 background: "rgba(255,255,255,0.05)",
@@ -403,30 +683,64 @@ export default function SkillGapPage() {
                 padding: "16px 18px",
               }}
             >
-              <p style={{ color: "#d4a844", marginBottom: "10px" }}>
+              <p
+                style={{
+                  color: "#d4a844",
+                  margin: "0 0 10px",
+                  fontWeight: 700,
+                }}
+              >
                 Weak Skills
               </p>
 
-              {weakSkills.map((skill) => (
-                <div key={skill.name} style={{ marginBottom: "10px" }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      fontSize: "13px",
-                    }}
-                  >
-                    <span>{skill.name}</span>
-                    <span>{skill.pct}%</span>
-                  </div>
+              {weakSkills.length > 0 ? (
+                weakSkills.map((skill) => (
+                  <div key={skill.name} style={{ marginBottom: "14px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: "10px",
+                        fontSize: "13px",
+                        marginBottom: "6px",
+                      }}
+                    >
+                      <span>{skill.name}</span>
+                      <span>{skill.pct}%</span>
+                    </div>
 
-                  <ProgressBar pct={skill.pct} color="#d4a844" />
-                </div>
-              ))}
+                    <ProgressBar pct={skill.pct} color="#d4a844" />
+
+                    {skill.reason && (
+                      <p
+                        style={{
+                          margin: "7px 0 0",
+                          fontSize: "11px",
+                          lineHeight: 1.5,
+                          color: "rgba(255,255,255,0.38)",
+                        }}
+                      >
+                        {skill.reason}
+                      </p>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p
+                  style={{
+                    fontSize: "12px",
+                    color: "rgba(255,255,255,0.45)",
+                    lineHeight: 1.6,
+                  }}
+                >
+                  Belum ada weak skill dari hasil AI. Untuk assessment awal,
+                  AI menandai skill sebagai missing sampai task pertama
+                  berhasil divalidasi.
+                </p>
+              )}
             </div>
           </div>
 
-          {/* Owned */}
           <div
             style={{
               background: "rgba(255,255,255,0.05)",
@@ -436,25 +750,44 @@ export default function SkillGapPage() {
               marginBottom: "24px",
             }}
           >
-            <p style={{ color: "#3dba74", marginBottom: "10px" }}>
+            <p
+              style={{
+                color: "#3dba74",
+                margin: "0 0 10px",
+                fontWeight: 700,
+              }}
+            >
               Skill yang Sudah Kamu Miliki
             </p>
 
-            {ownedSkills.map((skill) => (
-              <div
-                key={skill}
+            {ownedSkills.length > 0 ? (
+              ownedSkills.map((skill) => (
+                <div
+                  key={skill.name}
+                  style={{
+                    fontSize: "13px",
+                    color: "rgba(255,255,255,0.75)",
+                    marginBottom: "8px",
+                  }}
+                >
+                  ✓ {skill.name}
+                </div>
+              ))
+            ) : (
+              <p
                 style={{
-                  fontSize: "13px",
-                  color: "rgba(255,255,255,0.75)",
-                  marginBottom: "6px",
+                  fontSize: "12px",
+                  color: "rgba(255,255,255,0.45)",
+                  lineHeight: 1.6,
+                  margin: 0,
                 }}
               >
-                ✓ {skill}
-              </div>
-            ))}
+                Belum ada owned skill yang tervalidasi. Skill akan masuk ke
+                bagian ini setelah task dinilai passed oleh AI.
+              </p>
+            )}
           </div>
 
-          {/* Buttons */}
           <div
             style={{
               display: "grid",
@@ -499,7 +832,7 @@ export default function SkillGapPage() {
                 e.currentTarget.style.color = "#3dba74";
               }}
             >
-              Buat Learning Path →
+              Buka Learning Path →
             </button>
 
             <button

@@ -6,7 +6,6 @@ import { useNavigate } from "react-router-dom";
 import LoginRegisterPrompt from "../../components/LoginRegisterPrompt";
 import api from "../../api/axios";
 import toast from "react-hot-toast";
-import { isLoggedIn } from "../../utils/auth";
 
 export default function HasilAnalisisPage({
   onLihatRoadmap,
@@ -35,23 +34,30 @@ const problemCategory =
   "Skill Gap";
 
 const problemDesc =
+  analysis.summary ||
   analysis.problemDescription ||
   "Masih membutuhkan peningkatan skill";
 
+const formatRoleLabel = (role = "Frontend Developer") =>
+  role
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+
+const formatPersonaLabel = (personaValue = "Career Explorer") =>
+  personaValue
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+
 const persona =
+  analysis.personaType ||
   analysis.persona ||
   "Career Explorer";
-  // mapping hasil assessment
- const targetRole =
-  analysis.role ||
-  "Frontend Developer";
-  
+
  const DATA = {
   targetRole:
-    analysis.role ||
-    "Frontend Developer",
+    formatRoleLabel(analysis.role || "Frontend Developer"),
 
-  level: "Entry Level",
+  level: analysis.currentLevel || "Entry Level",
 
   problemCategory,
   problemDesc,
@@ -60,10 +66,10 @@ const persona =
     analysis.confidence || 75,
 
   confidenceLabel:
-    "Berdasarkan hasil assessment",
+    "Berdasarkan hasil assessment AI",
 
   persona: {
-    nama: persona,
+    nama: formatPersonaLabel(persona),
 
     tahapKarir:
       answers[1] ===
@@ -86,14 +92,15 @@ const persona =
   },
 
   langkah:
-    recommendedTasks.map(
-      (task, index) => ({
-        no: index + 1,
-        text: task,
-        badge: "Rekomendasi",
-        badgeColor: "#2d8c5e",
-      })
-    ),
+    (recommendedTasks.length
+      ? recommendedTasks
+      : ["Buka action plan untuk melihat task AI pertama kamu"]
+    ).map((task, index) => ({
+      no: index + 1,
+      text: task,
+      badge: "Rekomendasi AI",
+      badgeColor: "#2d8c5e",
+    })),
 };
 const card = {
   background: "rgba(255,255,255,0.06)",
@@ -145,9 +152,14 @@ const handleNextJourney = async () => {
   }
 
   try {
-    await api.post(
+    const saveResponse = await api.post(
       "/assessments/save",
       draft.assessmentPayload
+    );
+
+    localStorage.setItem(
+      "lastAssessmentResult",
+      JSON.stringify(saveResponse.data.data)
     );
 
     const user = JSON.parse(

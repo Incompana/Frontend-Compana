@@ -137,6 +137,7 @@ export default function TaskDetailPage() {
   const [file, setFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submittedResult, setSubmittedResult] = useState(null);
 
   useEffect(() => {
     const fetchActionPlan = async () => {
@@ -258,12 +259,51 @@ export default function TaskDetailPage() {
         formData.append("file", file);
       }
 
-      await api.post("/submissions/submit", formData);
+      const res = await api.post("/submissions/submit", formData);
+      const result = res.data.data;
+      const submittedStatus = result?.submission?.status;
 
+      localStorage.setItem("lastSubmissionResult", JSON.stringify(result));
       localStorage.removeItem("activeTask");
 
-      toast.success("Task berhasil disubmit.");
-      navigate("/feedback");
+      setSubmittedResult(result);
+
+      setActionPlan((prev) => {
+        if (!prev?.steps) return prev;
+
+        return {
+          ...prev,
+          steps: prev.steps.map((step) => {
+            const isSubmittedStep =
+              step.taskId === activeStep?.taskId ||
+              step.id === activeStep?.id ||
+              step.title === activeStep?.title;
+
+            if (!isSubmittedStep) return step;
+
+            return {
+              ...step,
+              isCompleted: submittedStatus === "passed",
+              status:
+                submittedStatus === "passed"
+                  ? "selesai"
+                  : submittedStatus === "revision"
+                  ? "revision"
+                  : step.status,
+              isLocked: false,
+            };
+          }),
+        };
+      });
+
+      setFile(null);
+      setNotes("");
+
+      toast.success(
+        submittedStatus === "passed"
+          ? "Task selesai dan berhasil dinilai AI."
+          : "Task berhasil disubmit. Silakan cek feedback revisi."
+      );
     } catch (error) {
       console.log(error.response?.data || error.message);
 
@@ -321,6 +361,237 @@ export default function TaskDetailPage() {
         >
           Kembali ke Action Plan
         </button>
+      </div>
+    );
+  }
+
+  if (submittedResult) {
+    const submissionStatus = submittedResult?.submission?.status;
+    const feedbackScore = submittedResult?.feedback?.score ?? 0;
+    const isPassed = submissionStatus === "passed";
+
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "#0a1f12",
+          color: "white",
+          display: "flex",
+          flexDirection: "column",
+          overflowX: "hidden",
+        }}
+      >
+        <nav
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "14px 40px",
+            flexShrink: 0,
+          }}
+        >
+          <Logo />
+
+          <button
+            onClick={() => navigate("/action-plan")}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "rgba(255,255,255,0.55)",
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: "13px",
+              cursor: "pointer",
+            }}
+          >
+            Kembali ke Action Plan
+          </button>
+        </nav>
+
+        <div
+          style={{
+            position: "relative",
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "24px",
+          }}
+        >
+          <div className="mesh-bg" />
+          <StarField />
+
+          <div
+            style={{
+              position: "relative",
+              zIndex: 1,
+              width: "100%",
+              maxWidth: "560px",
+              background: "rgba(255,255,255,0.06)",
+              border: `1px solid ${
+                isPassed
+                  ? "rgba(61,186,116,0.35)"
+                  : "rgba(212,168,68,0.35)"
+              }`,
+              borderRadius: "18px",
+              padding: "28px",
+              textAlign: "center",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.22)",
+            }}
+          >
+            <div
+              style={{
+                width: "64px",
+                height: "64px",
+                borderRadius: "50%",
+                background: isPassed
+                  ? "rgba(61,186,116,0.18)"
+                  : "rgba(212,168,68,0.18)",
+                border: `1px solid ${
+                  isPassed
+                    ? "rgba(61,186,116,0.35)"
+                    : "rgba(212,168,68,0.35)"
+                }`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "30px",
+                margin: "0 auto 16px",
+              }}
+            >
+              {isPassed ? "✅" : "📝"}
+            </div>
+
+            <h1
+              style={{
+                fontFamily: "'Playfair Display', serif",
+                fontSize: "28px",
+                margin: "0 0 10px",
+                color: isPassed ? "#3dba74" : "#d4a844",
+              }}
+            >
+              {isPassed ? "Task Selesai Disubmit" : "Task Berhasil Disubmit"}
+            </h1>
+
+            <p
+              style={{
+                margin: "0 0 18px",
+                color: "rgba(255,255,255,0.68)",
+                fontSize: "14px",
+                lineHeight: 1.7,
+              }}
+            >
+              {isPassed
+                ? "Submission kamu sudah dinilai passed. Status task akan berubah menjadi selesai di Action Plan, Dashboard, dan Profil."
+                : "Submission kamu sudah diterima, tetapi masih butuh revisi. Buka Feedback untuk melihat bagian yang perlu diperbaiki."}
+            </p>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "10px",
+                marginBottom: "18px",
+              }}
+            >
+              <div
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: "12px",
+                  padding: "14px",
+                }}
+              >
+                <p
+                  style={{
+                    margin: "0 0 4px",
+                    color: "rgba(255,255,255,0.42)",
+                    fontSize: "11px",
+                  }}
+                >
+                  Status
+                </p>
+
+                <p
+                  style={{
+                    margin: 0,
+                    color: isPassed ? "#3dba74" : "#d4a844",
+                    fontWeight: 800,
+                    textTransform: "capitalize",
+                  }}
+                >
+                  {submissionStatus}
+                </p>
+              </div>
+
+              <div
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: "12px",
+                  padding: "14px",
+                }}
+              >
+                <p
+                  style={{
+                    margin: "0 0 4px",
+                    color: "rgba(255,255,255,0.42)",
+                    fontSize: "11px",
+                  }}
+                >
+                  Score
+                </p>
+
+                <p
+                  style={{
+                    margin: 0,
+                    color: "#3dba74",
+                    fontWeight: 800,
+                  }}
+                >
+                  {feedbackScore}
+                </p>
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "12px",
+              }}
+            >
+              <button
+                onClick={() => navigate("/feedback")}
+                style={{
+                  padding: "13px 16px",
+                  borderRadius: "12px",
+                  border: "none",
+                  background: "#2d8c5e",
+                  color: "white",
+                  fontWeight: 800,
+                  cursor: "pointer",
+                }}
+              >
+                Lihat Feedback
+              </button>
+
+              <button
+                onClick={() => navigate("/action-plan")}
+                style={{
+                  padding: "13px 16px",
+                  borderRadius: "12px",
+                  border: "1px solid rgba(255,255,255,0.14)",
+                  background: "rgba(255,255,255,0.06)",
+                  color: "rgba(255,255,255,0.75)",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                Buka Action Plan
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

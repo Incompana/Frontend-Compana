@@ -157,35 +157,37 @@ export default function DashboardUserPage() {
     return actionPlan?.steps || [];
   }, [actionPlan]);
 
-  const completedSteps =
-    progressData?.completedTasks ??
-    steps.filter((step) => step.isCompleted).length;
+  const completedSteps = steps.filter(
+    (step) => step.isCompleted || step.status === "selesai"
+  ).length;
 
-  const totalSteps = progressData?.totalTasks ?? steps.length;
+  const totalSteps = steps.length;
 
   const overallPct =
-    progressData?.progressPercentage ??
-    (totalSteps > 0
+    totalSteps > 0
       ? Math.round((completedSteps / totalSteps) * 100)
-      : 0);
+      : progressData?.progressPercentage || 0;
 
-  const totalXp = progressData?.totalXp ?? completedSteps * 100;
+  const totalXp = completedSteps * 120;
+
+  const allCompleted = totalSteps > 0 && completedSteps === totalSteps;
 
   const activeTask = useMemo(() => {
-    if (progressData?.allCompleted) {
+    if (allCompleted) {
       return null;
     }
 
-    if (progressData?.currentTask) {
-      return progressData.currentTask;
-    }
-
     return (
+      steps.find(
+        (step) =>
+          step.status === "revision" ||
+          step.status === "berjalan" ||
+          (!step.isCompleted && !step.isLocked)
+      ) ||
       steps.find((step) => !step.isCompleted) ||
-      steps[0] ||
       null
     );
-  }, [progressData, steps]);
+  }, [allCompleted, steps]);
 
   const handleNavigate = (item) => {
     setActiveNav(item.id);
@@ -203,7 +205,7 @@ const handleConfirmLogout = () => {
 };
 
   const handleContinueTask = () => {
-    if (progressData?.allCompleted) {
+    if (allCompleted) {
       toast.success("Semua task sudah selesai. Keren!");
       return;
     }
@@ -476,23 +478,23 @@ const handleConfirmLogout = () => {
 
             <button
               onClick={handleContinueTask}
-              disabled={progressData?.allCompleted}
+              disabled={allCompleted}
               style={{
                 padding: "10px 22px",
                 borderRadius: "10px",
                 border: "none",
-                background: progressData?.allCompleted
+                background: allCompleted
                   ? "rgba(45,140,94,0.35)"
                   : "#3dba74",
                 color: "white",
                 fontSize: "14px",
                 fontWeight: 700,
-                cursor: progressData?.allCompleted
+                cursor: allCompleted
                   ? "not-allowed"
                   : "pointer",
               }}
             >
-              {progressData?.allCompleted
+              {allCompleted
                 ? "Selesai Semua ✓"
                 : "Lanjut Task →"}
             </button>
@@ -625,7 +627,7 @@ const handleConfirmLogout = () => {
                 lineHeight: 1.5,
               }}
             >
-              {progressData?.allCompleted
+              {allCompleted
                 ? "Semua task dalam action plan sudah selesai. Mantap!"
                 : totalSteps > 0
                 ? `${completedSteps} dari ${totalSteps} task sudah selesai.`
@@ -657,12 +659,12 @@ const handleConfirmLogout = () => {
                   gap: "6px",
                   padding: "4px 12px",
                   borderRadius: "999px",
-                  background: progressData?.allCompleted
+                  background: allCompleted
                     ? "rgba(61,186,116,0.13)"
                     : activeTask?.status === "revision"
                     ? "rgba(212,168,68,0.13)"
                     : "rgba(61,186,116,0.1)",
-                  border: progressData?.allCompleted
+                  border: allCompleted
                     ? "1px solid rgba(61,186,116,0.35)"
                     : activeTask?.status === "revision"
                     ? "1px solid rgba(212,168,68,0.35)"
@@ -671,21 +673,21 @@ const handleConfirmLogout = () => {
                 }}
               >
                 <span style={{ fontSize: "11px" }}>
-                  {progressData?.allCompleted ? "✓" : "▷"}
+                  {allCompleted ? "✓" : "▷"}
                 </span>
 
                 <span
                   style={{
                     fontSize: "11px",
                     fontWeight: 700,
-                    color: progressData?.allCompleted
+                    color: allCompleted
                       ? "#2d8c5e"
                       : activeTask?.status === "revision"
                       ? "#b87a00"
                       : "#2d8c5e",
                   }}
                 >
-                  {progressData?.allCompleted
+                  {allCompleted
                     ? "Selesai Semua"
                     : activeTask?.status === "revision"
                     ? "Need Revision"
@@ -760,24 +762,24 @@ const handleConfirmLogout = () => {
               <div style={{ display: "flex", gap: "10px" }}>
                 <button
                   onClick={handleContinueTask}
-                  disabled={progressData?.allCompleted}
+                  disabled={allCompleted}
                   style={{
                     flex: 1,
                     padding: "12px",
                     borderRadius: "10px",
                     border: "none",
-                    background: progressData?.allCompleted
+                    background: allCompleted
                       ? "rgba(45,140,94,0.35)"
                       : "#2d8c5e",
                     color: "white",
                     fontSize: "14px",
                     fontWeight: 700,
-                    cursor: progressData?.allCompleted
+                    cursor: allCompleted
                       ? "not-allowed"
                       : "pointer",
                   }}
                 >
-                  {progressData?.allCompleted
+                  {allCompleted
                     ? "Selesai Semua ✓"
                     : "Lanjutkan →"}
                 </button>

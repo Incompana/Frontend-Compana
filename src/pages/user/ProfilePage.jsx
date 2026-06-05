@@ -163,12 +163,34 @@ export default function ProfilePage() {
     fetchProfileData();
   }, []);
 
-  const completedTasks = progressData?.completedTasks ?? 0;
-  const totalTasks = progressData?.totalTasks ?? 0;
-  const progressPercentage = progressData?.progressPercentage ?? 0;
-  const totalXp = progressData?.totalXp ?? 0;
-  const currentTask = progressData?.currentTask;
-  const allCompleted = progressData?.allCompleted;
+  const steps = actionPlan?.steps || [];
+
+  const completedTasks = steps.filter(
+    (step) => step.isCompleted || step.status === "selesai"
+  ).length;
+
+  const totalTasks = steps.length;
+
+  const progressPercentage =
+    totalTasks > 0
+      ? Math.round((completedTasks / totalTasks) * 100)
+      : progressData?.progressPercentage ?? 0;
+
+  const totalXp = completedTasks * 120;
+
+  const allCompleted = totalTasks > 0 && completedTasks === totalTasks;
+
+  const currentTask = allCompleted
+    ? null
+    : steps.find(
+        (step) =>
+          step.status === "revision" ||
+          step.status === "berjalan" ||
+          (!step.isCompleted && !step.isLocked)
+      ) ||
+      steps.find((step) => !step.isCompleted) ||
+      progressData?.currentTask ||
+      null;
 
   const handleLogout = () => {
     logout();

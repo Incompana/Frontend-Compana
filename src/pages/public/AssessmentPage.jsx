@@ -10,7 +10,7 @@ const QUESTIONS = [
   {
     id: 1,
     category: "Situasi",
-    question: "Situasi sekarang gimana nih ?",
+    question: "Situasi kamu sekarang gimana?",
     options: [
       "mahasiswa aktif",
       "fresh graduate",
@@ -18,31 +18,39 @@ const QUESTIONS = [
       "ingin berpindah pekerjaan",
     ],
   },
-
   {
     id: 2,
-    category: "Pengalaman",
-    question:
-      "situasi apa yang membuat mu merasa stuck ?",
-
+    category: "Kendala",
+    question: "Bagian mana yang paling bikin kamu bingung sekarang?",
     options: [
       "gatau mau mulai dari mana",
-      "banyak skill, tapi bingung bangettt",
+      "banyak skill, tapi bingung banget",
       "takut salah jalur",
-      "sudah belajar, tapi merasa tidak belajar",
+      "sudah belajar, tapi merasa tidak berkembang",
+      "belum punya portfolio",
     ],
   },
-
   {
     id: 3,
-    category: "Pengalaman",
-    question: "mau coba apa dulu nih",
-
+    category: "Target Role",
+    question: "Kamu ingin diarahkan ke jalur apa dulu?",
     options: [
-      "full stack",
-      "data science",
-      "machine learning",
-      "gatau sama sekali",
+      "Frontend Developer",
+      "Backend Developer",
+      "UI/UX Designer",
+      "Machine Learning Engineer",
+      "SOC Analyst",
+      "Masih bingung",
+    ],
+  },
+  {
+    id: 4,
+    category: "Level",
+    question: "Level skill kamu sekarang menurut kamu gimana?",
+    options: [
+      "beginner",
+      "intermediate",
+      "advanced",
     ],
   },
 ];
@@ -127,22 +135,45 @@ export default function AssessmentPage() {
       navigate("/loading");
 
 const roleAnswer = updatedDraft.answers[3];
+const blockerAnswer = updatedDraft.answers[2];
+const levelAnswer = updatedDraft.answers[4] || "beginner";
 
 const roleMap = {
-  "full stack": "Fullstack Developer",
-  "data science": "Data Scientist",
-  "machine learning": "Machine Learning Engineer",
-  "gatau sama sekali": "Frontend Developer",
+  "Frontend Developer": "Frontend Developer",
+  "Backend Developer": "Backend Developer",
+  "UI/UX Designer": "UI/UX Designer",
+  "Machine Learning Engineer": "Machine Learning Engineer",
+  "SOC Analyst": "SOC Analyst",
+  "Masih bingung": "Frontend Developer",
+};
+
+const blockerMap = {
+  "gatau mau mulai dari mana": "belum_tahu_mulai",
+  "banyak skill, tapi bingung banget": "skill_belum_cukup",
+  "takut salah jalur": "takut_salah_pilih",
+  "sudah belajar, tapi merasa tidak berkembang": "skill_belum_cukup",
+  "belum punya portfolio": "belum_ada_portfolio",
+};
+
+const problemCategoryMap = {
+  "gatau mau mulai dari mana": "Bingung mulai belajar dari mana",
+  "banyak skill, tapi bingung banget": "Skill belum cukup",
+  "takut salah jalur": "Takut salah pilih jalur",
+  "sudah belajar, tapi merasa tidak berkembang": "Skill belum cukup",
+  "belum punya portfolio": "Belum punya portfolio",
 };
 
 const payload = {
-  targetRole:
-    roleMap[roleAnswer] ||
-    "Frontend Developer",
-
-  answers: QUESTIONS.map((q) => ({
-    question: q.question,
-    answer: updatedDraft.answers[q.id] || "",
+  targetRole: roleMap[roleAnswer] || "Frontend Developer",
+  currentLevel: levelAnswer,
+  problemCategory:
+    problemCategoryMap[blockerAnswer] ||
+    "Bingung mulai belajar dari mana",
+  blockerType: blockerMap[blockerAnswer] || "belum_tahu_mulai",
+  maxQuestions: 3,
+  answers: QUESTIONS.map((questionItem) => ({
+    question: questionItem.question,
+    answer: updatedDraft.answers[questionItem.id] || "",
   })),
 };
       // API
@@ -169,6 +200,9 @@ const payload = {
 
   recommendedTasks:
     response.data.data.recommendedTasks,
+
+  aiResult:
+    response.data.data.ai,
 }));
       setSubmitting(false);
 
@@ -703,7 +737,7 @@ const payload = {
                   : currentQ ===
                     QUESTIONS.length -
                       1
-                  ? "Analyze →"
+                  ? "Analisis AI →"
                   : "Selanjutnya →"}
               </button>
             </div>
