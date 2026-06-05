@@ -158,7 +158,6 @@ export default function HasilAnalisisPage({
       }
 
       clearDraft();
-
       navigate("/skill-gap");
     } catch (error) {
       console.log(error.response?.data || error.message);
@@ -196,7 +195,6 @@ export default function HasilAnalisisPage({
         overflowX: "hidden",
       }}
     >
-      {/* Nav */}
       <nav
         style={{
           display: "flex",
@@ -245,7 +243,6 @@ export default function HasilAnalisisPage({
         </button>
       </nav>
 
-      {/* Body */}
       <div
         style={{
           position: "relative",
@@ -268,7 +265,6 @@ export default function HasilAnalisisPage({
             animation: "slideUp 0.6s ease both",
           }}
         >
-          {/* Hero */}
           <div style={{ textAlign: "center", marginBottom: "28px" }}>
             <div
               style={{
@@ -322,7 +318,6 @@ export default function HasilAnalisisPage({
             </p>
           </div>
 
-          {/* Top cards */}
           <div
             style={{
               display: "grid",
@@ -356,9 +351,11 @@ export default function HasilAnalisisPage({
               <p style={{ ...label, color: "rgba(40,60,50,0.5)" }}>
                 Target Role
               </p>
+
               <p style={{ ...value, color: "#2d8c5e" }}>
                 {DATA.targetRole}
               </p>
+
               <p style={{ ...subValue, color: "rgba(40,60,50,0.55)" }}>
                 {DATA.level}
               </p>
@@ -384,9 +381,11 @@ export default function HasilAnalisisPage({
               <p style={{ ...label, color: "rgba(40,60,50,0.5)" }}>
                 Problem Category
               </p>
+
               <p style={{ ...value, color: "#c07030" }}>
                 {DATA.problemCategory}
               </p>
+
               <p style={{ ...subValue, color: "rgba(40,60,50,0.55)" }}>
                 {DATA.problemDesc}
               </p>
@@ -456,7 +455,6 @@ export default function HasilAnalisisPage({
             </div>
           </div>
 
-          {/* Persona */}
           <div
             style={{
               ...card,
@@ -533,7 +531,6 @@ export default function HasilAnalisisPage({
             </div>
           </div>
 
-          {/* Skill Gap */}
           <div
             style={{
               ...card,
@@ -590,7 +587,6 @@ export default function HasilAnalisisPage({
             </div>
           </div>
 
-          {/* 3 Langkah */}
           <div
             style={{
               ...card,
@@ -697,7 +693,6 @@ export default function HasilAnalisisPage({
             </div>
           </div>
 
-          {/* Buttons */}
           <div
             style={{
               display: "grid",
