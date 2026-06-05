@@ -32,7 +32,7 @@ import DashboardPage from "./pages/user/DashboardPage";
 import ProfilePage from "./pages/user/ProfilePage";
 
 // ADMIN
-import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
+import AdminDashboardPage from "./pages/Admin/AdminDashboardPage";
 
 export default function App() {
   return (
