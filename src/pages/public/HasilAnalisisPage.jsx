@@ -1,4 +1,4 @@
-// src/pages/HasilAnalisisPage.jsx
+// src/pages/public/HasilAnalisisPage.jsx
 import { useState } from "react";
 import { Logo, StarField } from "../../components/Shared";
 import { useAssessment } from "../../context/AssessmentContext";
@@ -12,178 +12,179 @@ export default function HasilAnalisisPage({
   onSimpan,
   onSelesai,
 }) {
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const navigate = useNavigate();
 
-const [showLoginPrompt, setShowLoginPrompt] = useState(false);
-const navigate = useNavigate();
+  const { draft, clearDraft } = useAssessment();
 
-const { draft, clearDraft } = useAssessment();
+  const answers = draft.answers || {};
+  const analysis = draft.analysisResult || {};
+  const skillGap = draft.skillGap || [];
+  const recommendedTasks = draft.recommendedTasks || [];
 
-const answers = draft.answers || {};
+  const problemCategory = analysis.problemCategory || "Skill Gap";
 
-const analysis =
-  draft.analysisResult || {};
+  const problemDesc =
+    analysis.summary ||
+    analysis.problemDescription ||
+    "Masih membutuhkan peningkatan skill";
 
-const skillGap =
-  draft.skillGap || [];
+  const formatRoleLabel = (role = "Frontend Developer") =>
+    role
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
 
-const recommendedTasks =
-  draft.recommendedTasks || [];
+  const formatPersonaLabel = (personaValue = "Career Explorer") =>
+    personaValue
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
 
-const problemCategory =
-  analysis.problemCategory ||
-  "Skill Gap";
+  const persona =
+    analysis.personaType ||
+    analysis.persona ||
+    "Career Explorer";
 
-const problemDesc =
-  analysis.summary ||
-  analysis.problemDescription ||
-  "Masih membutuhkan peningkatan skill";
+  const DATA = {
+    targetRole: formatRoleLabel(analysis.role || "Frontend Developer"),
 
-const formatRoleLabel = (role = "Frontend Developer") =>
-  role
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+    level: analysis.currentLevel || "Entry Level",
 
-const formatPersonaLabel = (personaValue = "Career Explorer") =>
-  personaValue
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+    problemCategory,
+    problemDesc,
 
-const persona =
-  analysis.personaType ||
-  analysis.persona ||
-  "Career Explorer";
+    confidenceScore: analysis.confidence || 75,
 
- const DATA = {
-  targetRole:
-    formatRoleLabel(analysis.role || "Frontend Developer"),
+    confidenceLabel: "Berdasarkan hasil assessment AI",
 
-  level: analysis.currentLevel || "Entry Level",
+    persona: {
+      nama: formatPersonaLabel(persona),
 
-  problemCategory,
-  problemDesc,
+      tahapKarir:
+        answers[1] === "mahasiswa aktif"
+          ? "Mahasiswa"
+          : "Pemula",
 
-  confidenceScore:
-    analysis.confidence || 75,
+      skillSaatIni: answers[3] || "Belum ditentukan",
 
-  confidenceLabel:
-    "Berdasarkan hasil assessment AI",
+      gayaBelajar: "Praktek + Video",
 
-  persona: {
-    nama: formatPersonaLabel(persona),
+      waktuTersedia: "1–2 jam / hari",
 
-    tahapKarir:
-      answers[1] ===
-      "mahasiswa aktif"
-        ? "Mahasiswa"
-        : "Pemula",
+      target6Bulan: "Dapat pekerjaan pertama",
+    },
 
-    skillSaatIni:
-      answers[3] ||
-      "Belum ditentukan",
-
-    gayaBelajar:
-      "Praktek + Video",
-
-    waktuTersedia:
-      "1–2 jam / hari",
-
-    target6Bulan:
-      "Dapat pekerjaan pertama",
-  },
-
-  langkah:
-    (recommendedTasks.length
-      ? recommendedTasks
-      : ["Buka action plan untuk melihat task AI pertama kamu"]
+    langkah: (
+      recommendedTasks.length
+        ? recommendedTasks
+        : ["Buka action plan untuk melihat task AI pertama kamu"]
     ).map((task, index) => ({
       no: index + 1,
       text: task,
       badge: "Rekomendasi AI",
       badgeColor: "#2d8c5e",
     })),
-};
-const card = {
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.12)",
-  borderRadius: "14px",
-  padding: "18px 20px",
-};
+  };
 
-const label = {
-  fontFamily: "'DM Sans', sans-serif",
-  fontSize: "10px",
-  letterSpacing: "0.08em",
-  color: "rgba(255,255,255,0.4)",
-  textTransform: "uppercase",
-  marginBottom: "4px",
-};
+  const card = {
+    background: "rgba(255,255,255,0.06)",
+    border: "1px solid rgba(255,255,255,0.12)",
+    borderRadius: "14px",
+    padding: "18px 20px",
+  };
 
-const value = {
-  fontFamily: "'Playfair Display', serif",
-  fontWeight: 700,
-  fontSize: "17px",
-  color: "#3dba74",
-  textDecoration: "underline",
-  textDecorationColor: "rgba(61,186,116,0.35)",
-  textUnderlineOffset: "3px",
-};
+  const label = {
+    fontFamily: "'DM Sans', sans-serif",
+    fontSize: "10px",
+    letterSpacing: "0.08em",
+    color: "rgba(255,255,255,0.4)",
+    textTransform: "uppercase",
+    marginBottom: "4px",
+  };
 
-const subValue = {
-  fontFamily: "'DM Sans', sans-serif",
-  fontSize: "12px",
-  color: "rgba(255,255,255,0.5)",
-  marginTop: "2px",
-};
+  const value = {
+    fontFamily: "'Playfair Display', serif",
+    fontWeight: 700,
+    fontSize: "17px",
+    color: "#3dba74",
+    textDecoration: "underline",
+    textDecorationColor: "rgba(61,186,116,0.35)",
+    textUnderlineOffset: "3px",
+  };
 
-const pct = DATA.confidenceScore;
+  const subValue = {
+    fontFamily: "'DM Sans', sans-serif",
+    fontSize: "12px",
+    color: "rgba(255,255,255,0.5)",
+    marginTop: "2px",
+  };
 
-const handleNextJourney = async () => {
-  if (!draft?.assessmentPayload) {
-    toast.error("Data assessment belum tersedia");
-    navigate("/assessment");
-    return;
-  }
+  const pct = DATA.confidenceScore;
 
-  const token = localStorage.getItem("token");
-
-  if (!token || token === "undefined" || token === "null") {
-    setShowLoginPrompt(true);
-    return;
-  }
-
-  try {
-    const saveResponse = await api.post(
-      "/assessments/save",
-      draft.assessmentPayload
-    );
-
-    localStorage.setItem(
-      "lastAssessmentResult",
-      JSON.stringify(saveResponse.data.data)
-    );
-
-    const user = JSON.parse(
-      localStorage.getItem("user") || "null"
-    );
-
-    if (user) {
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          ...user,
-          is_assessment_done: true,
-        })
-      );
+  const handleNextJourney = async () => {
+    if (!draft?.assessmentPayload) {
+      toast.error("Data assessment belum tersedia");
+      navigate("/assessment");
+      return;
     }
 
-    clearDraft();
+    const token = localStorage.getItem("token");
 
-    navigate("/skill-gap");
-  } catch (error) {
-    console.log(error.response?.data || error.message);
-    toast.error("Gagal menyimpan hasil assessment");
+    if (!token || token === "undefined" || token === "null") {
+      setShowLoginPrompt(true);
+      return;
+    }
+
+    try {
+      const saveResponse = await api.post(
+        "/assessments/save",
+        draft.assessmentPayload
+      );
+
+      localStorage.setItem(
+        "lastAssessmentResult",
+        JSON.stringify(saveResponse.data.data)
+      );
+
+      const user = JSON.parse(localStorage.getItem("user") || "null");
+
+      if (user) {
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            ...user,
+            is_assessment_done: true,
+          })
+        );
+      }
+
+      clearDraft();
+
+      navigate("/skill-gap");
+    } catch (error) {
+      console.log(error.response?.data || error.message);
+      toast.error("Gagal menyimpan hasil assessment");
+    }
+  };
+
+  const handleFinish = () => {
+    if (onSelesai) {
+      onSelesai();
+      return;
+    }
+
+    navigate("/");
+  };
+
+  if (showLoginPrompt) {
+    return (
+      <LoginRegisterPrompt
+        onLogin={() => navigate("/login?redirect=/skill-gap")}
+        onRegister={() => navigate("/register?redirect=/skill-gap")}
+        onSkip={() => setShowLoginPrompt(false)}
+      />
+    );
   }
-};
+
   return (
     <div
       style={{
@@ -206,6 +207,7 @@ const handleNextJourney = async () => {
         }}
       >
         <Logo />
+
         <div
           style={{
             padding: "6px 20px",
@@ -220,8 +222,9 @@ const handleNextJourney = async () => {
         >
           Hasil Analisis
         </div>
+
         <button
-          onClick={onSelesai}
+          onClick={handleFinish}
           style={{
             background: "transparent",
             border: "none",
@@ -231,8 +234,12 @@ const handleNextJourney = async () => {
             cursor: "pointer",
             transition: "color 0.2s",
           }}
-          onMouseEnter={(e) => (e.target.style.color = "rgba(255,255,255,0.95)")}
-          onMouseLeave={(e) => (e.target.style.color = "rgba(255,255,255,0.55)")}
+          onMouseEnter={(e) =>
+            (e.target.style.color = "rgba(255,255,255,0.95)")
+          }
+          onMouseLeave={(e) =>
+            (e.target.style.color = "rgba(255,255,255,0.55)")
+          }
         >
           Selesai ✓
         </button>
@@ -261,7 +268,7 @@ const handleNextJourney = async () => {
             animation: "slideUp 0.6s ease both",
           }}
         >
-          {/* Hero icon + title */}
+          {/* Hero */}
           <div style={{ textAlign: "center", marginBottom: "28px" }}>
             <div
               style={{
@@ -279,6 +286,7 @@ const handleNextJourney = async () => {
             >
               🧠
             </div>
+
             <h1
               style={{
                 fontFamily: "'Playfair Display', serif",
@@ -299,6 +307,7 @@ const handleNextJourney = async () => {
               </span>{" "}
               <span style={{ color: "white" }}>sudah siap!</span>
             </h1>
+
             <p
               style={{
                 fontFamily: "'DM Sans', sans-serif",
@@ -308,11 +317,12 @@ const handleNextJourney = async () => {
                 textDecorationColor: "rgba(255,255,255,0.2)",
               }}
             >
-              Berdasarkan jawabanmu, berikut profil karir dan rekomendasi langkah yang bisa diambil hari ini.
+              Berdasarkan jawabanmu, berikut profil karir dan rekomendasi
+              langkah yang bisa diambil hari ini.
             </p>
           </div>
 
-          {/* 3-column top cards */}
+          {/* Top cards */}
           <div
             style={{
               display: "grid",
@@ -321,7 +331,6 @@ const handleNextJourney = async () => {
               marginBottom: "16px",
             }}
           >
-            {/* Target Role */}
             <div
               style={{
                 ...card,
@@ -343,12 +352,18 @@ const handleNextJourney = async () => {
               >
                 💻
               </div>
-              <p style={{ ...label, color: "rgba(40,60,50,0.5)" }}>Target Role</p>
-              <p style={{ ...value, color: "#2d8c5e" }}>{DATA.targetRole}</p>
-              <p style={{ ...subValue, color: "rgba(40,60,50,0.55)" }}>{DATA.level}</p>
+
+              <p style={{ ...label, color: "rgba(40,60,50,0.5)" }}>
+                Target Role
+              </p>
+              <p style={{ ...value, color: "#2d8c5e" }}>
+                {DATA.targetRole}
+              </p>
+              <p style={{ ...subValue, color: "rgba(40,60,50,0.55)" }}>
+                {DATA.level}
+              </p>
             </div>
 
-            {/* Problem Category */}
             <div style={{ ...card, background: "rgba(255,255,255,0.92)" }}>
               <div
                 style={{
@@ -365,12 +380,18 @@ const handleNextJourney = async () => {
               >
                 😕
               </div>
-              <p style={{ ...label, color: "rgba(40,60,50,0.5)" }}>Problem Category</p>
-              <p style={{ ...value, color: "#c07030" }}>{DATA.problemCategory}</p>
-              <p style={{ ...subValue, color: "rgba(40,60,50,0.55)" }}>{DATA.problemDesc}</p>
+
+              <p style={{ ...label, color: "rgba(40,60,50,0.5)" }}>
+                Problem Category
+              </p>
+              <p style={{ ...value, color: "#c07030" }}>
+                {DATA.problemCategory}
+              </p>
+              <p style={{ ...subValue, color: "rgba(40,60,50,0.55)" }}>
+                {DATA.problemDesc}
+              </p>
             </div>
 
-            {/* Confidence Score */}
             <div style={{ ...card, background: "rgba(255,255,255,0.92)" }}>
               <div
                 style={{
@@ -387,7 +408,11 @@ const handleNextJourney = async () => {
               >
                 📊
               </div>
-              <p style={{ ...label, color: "rgba(40,60,50,0.5)" }}>Confidence Score</p>
+
+              <p style={{ ...label, color: "rgba(40,60,50,0.5)" }}>
+                Confidence Score
+              </p>
+
               <p
                 style={{
                   fontFamily: "'Playfair Display', serif",
@@ -399,6 +424,7 @@ const handleNextJourney = async () => {
               >
                 {pct}%
               </p>
+
               <div
                 style={{
                   height: "5px",
@@ -417,13 +443,20 @@ const handleNextJourney = async () => {
                   }}
                 />
               </div>
-              <p style={{ ...subValue, color: "rgba(40,60,50,0.55)", fontSize: "11px" }}>
+
+              <p
+                style={{
+                  ...subValue,
+                  color: "rgba(40,60,50,0.55)",
+                  fontSize: "11px",
+                }}
+              >
                 {DATA.confidenceLabel}
               </p>
             </div>
           </div>
 
-          {/* Profil Persona */}
+          {/* Persona */}
           <div
             style={{
               ...card,
@@ -455,6 +488,7 @@ const handleNextJourney = async () => {
                 Profil Persona Kamu
               </span>
             </p>
+
             <div
               style={{
                 display: "grid",
@@ -480,6 +514,7 @@ const handleNextJourney = async () => {
                   }}
                 >
                   <p style={label}>{lbl}</p>
+
                   <p
                     style={{
                       fontFamily: "'DM Sans', sans-serif",
@@ -497,51 +532,65 @@ const handleNextJourney = async () => {
               ))}
             </div>
           </div>
+
+          {/* Skill Gap */}
           <div
-  style={{
-    ...card,
-    marginBottom: "16px",
-  }}
->
-  <p
-    style={{
-      fontFamily: "'DM Sans', sans-serif",
-      fontSize: "13px",
-      fontWeight: 600,
-      color: "#3dba74",
-      marginBottom: "12px",
-    }}
-  >
-    🚀 Skill Gap
-  </p>
+            style={{
+              ...card,
+              marginBottom: "16px",
+            }}
+          >
+            <p
+              style={{
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: "13px",
+                fontWeight: 600,
+                color: "#3dba74",
+                marginBottom: "12px",
+              }}
+            >
+              🚀 Skill Gap
+            </p>
 
-  <div
-    style={{
-      display: "flex",
-      flexWrap: "wrap",
-      gap: "10px",
-    }}
-  >
-    {skillGap.map((skill) => (
-      <span
-        key={skill}
-        style={{
-          padding: "8px 14px",
-          borderRadius: "999px",
-          background:
-            "rgba(61,186,116,0.15)",
-          border:
-            "1px solid rgba(61,186,116,0.3)",
-          fontSize: "13px",
-        }}
-      >
-        {skill}
-      </span>
-    ))}
-  </div>
-</div>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "10px",
+              }}
+            >
+              {skillGap.length ? (
+                skillGap.map((skill) => (
+                  <span
+                    key={skill}
+                    style={{
+                      padding: "8px 14px",
+                      borderRadius: "999px",
+                      background: "rgba(61,186,116,0.15)",
+                      border: "1px solid rgba(61,186,116,0.3)",
+                      fontSize: "13px",
+                    }}
+                  >
+                    {skill}
+                  </span>
+                ))
+              ) : (
+                <p
+                  style={{
+                    fontFamily: "'DM Sans', sans-serif",
+                    fontSize: "13px",
+                    color: "rgba(255,255,255,0.6)",
+                    margin: 0,
+                  }}
+                >
+                  Skill gap akan ditampilkan setelah hasil assessment berhasil
+                  diproses.
+                </p>
+              )}
+            </div>
+          </div>
 
-          {/* 3 Langkah Pertama */}
+          {/* 3 Langkah */}
           <div
             style={{
               ...card,
@@ -573,7 +622,14 @@ const handleNextJourney = async () => {
                 3 Langkah Pertama Kamu
               </span>
             </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "10px",
+              }}
+            >
               {DATA.langkah.map((item) => (
                 <div
                   key={item.no}
@@ -606,6 +662,7 @@ const handleNextJourney = async () => {
                   >
                     {item.no}
                   </div>
+
                   <p
                     style={{
                       fontFamily: "'DM Sans', sans-serif",
@@ -620,6 +677,7 @@ const handleNextJourney = async () => {
                   >
                     {item.text}
                   </p>
+
                   <span
                     style={{
                       padding: "4px 10px",
@@ -639,10 +697,16 @@ const handleNextJourney = async () => {
             </div>
           </div>
 
-          {/* Bottom buttons */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "12px" }}>
+          {/* Buttons */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr auto",
+              gap: "12px",
+            }}
+          >
             <button
-onClick={handleNextJourney}
+              onClick={handleNextJourney}
               style={{
                 padding: "14px",
                 borderRadius: "12px",
@@ -667,10 +731,11 @@ onClick={handleNextJourney}
                 e.target.style.color = "rgba(255,255,255,0.75)";
               }}
             >
-               Lanjut ke Skill Gap →
+              Lanjut ke Skill Gap →
             </button>
+
             <button
-            onClick={handleNextJourney}
+              onClick={handleNextJourney}
               style={{
                 padding: "14px 28px",
                 borderRadius: "12px",
@@ -697,14 +762,6 @@ onClick={handleNextJourney}
           </div>
         </div>
       </div>
-    {showLoginPrompt && (
-  <LoginRegisterPrompt
-    onLogin={() => navigate("/login")}
-    onRegister={() => navigate("/register")}
-    onSkip={() => setShowLoginPrompt(false)}
-  />
-)}
-
     </div>
   );
 }
