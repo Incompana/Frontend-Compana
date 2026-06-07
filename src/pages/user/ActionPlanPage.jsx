@@ -1,5 +1,4 @@
 // src/pages/user/ActionPlanPage.jsx
-
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Logo, StarField } from "../../components/Shared";
@@ -11,10 +10,7 @@ const getStatusConfig = (step) => {
     return {
       label: "Selesai",
       icon: "✓",
-      bg: "rgba(61,186,116,0.14)",
-      border: "rgba(61,186,116,0.35)",
-      color: "#3dba74",
-      badgeBg: "rgba(61,186,116,0.16)",
+      tone: "done",
       canStart: false,
     };
   }
@@ -23,10 +19,7 @@ const getStatusConfig = (step) => {
     return {
       label: "Perlu Revisi",
       icon: "!",
-      bg: "rgba(212,168,68,0.1)",
-      border: "rgba(212,168,68,0.35)",
-      color: "#d4a844",
-      badgeBg: "rgba(212,168,68,0.14)",
+      tone: "revision",
       canStart: true,
     };
   }
@@ -35,10 +28,7 @@ const getStatusConfig = (step) => {
     return {
       label: "Sedang Berjalan",
       icon: "▶",
-      bg: "rgba(61,186,116,0.08)",
-      border: "rgba(61,186,116,0.28)",
-      color: "#a8d8b8",
-      badgeBg: "rgba(61,186,116,0.12)",
+      tone: "active",
       canStart: true,
     };
   }
@@ -46,10 +36,7 @@ const getStatusConfig = (step) => {
   return {
     label: "Terkunci",
     icon: "🔒",
-    bg: "rgba(255,255,255,0.04)",
-    border: "rgba(255,255,255,0.1)",
-    color: "rgba(255,255,255,0.45)",
-    badgeBg: "rgba(255,255,255,0.07)",
+    tone: "locked",
     canStart: false,
   };
 };
@@ -171,572 +158,699 @@ export default function ActionPlanPage() {
 
   if (loading) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          background: "#0a1f12",
-          color: "white",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontFamily: "'DM Sans', sans-serif",
-        }}
-      >
-        Memuat action plan...
+      <div className="action-loading">
+        <div className="action-loading-card">
+          <div>🗺️</div>
+          <p>Memuat action plan...</p>
+        </div>
+
+        <style>{`
+          .action-loading {
+            min-height: 100vh;
+            min-height: 100svh;
+            background: #0a1f12;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'DM Sans', sans-serif;
+            padding: 24px;
+          }
+
+          .action-loading-card {
+            text-align: center;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 26px 28px;
+          }
+
+          .action-loading-card div {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: rgba(61,186,116,0.14);
+            border: 1px solid rgba(61,186,116,0.28);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 14px;
+            font-size: 24px;
+          }
+
+          .action-loading-card p {
+            margin: 0;
+            color: rgba(255,255,255,0.72);
+          }
+        `}</style>
       </div>
     );
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#0a1f12",
-        color: "white",
-        display: "flex",
-        flexDirection: "column",
-        overflowX: "hidden",
-      }}
-    >
-      <nav
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "14px 40px",
-        }}
-      >
-        <Logo />
-
-        <div
-          style={{
-            padding: "6px 20px",
-            borderRadius: "999px",
-            border: "1.5px solid rgba(255,255,255,0.25)",
-            background: "rgba(255,255,255,0.08)",
-            fontFamily: "'DM Sans', sans-serif",
-            fontSize: "13px",
-            color: "rgba(255,255,255,0.85)",
-            fontWeight: 500,
-          }}
-        >
-          Action Plan
+    <div className="action-page">
+      <nav className="action-navbar">
+        <div className="action-logo-wrap">
+          <Logo />
         </div>
 
-        <button
-          onClick={handleBack}
-          style={{
-            background: "transparent",
-            border: "none",
-            color: "rgba(255,255,255,0.55)",
-            fontFamily: "'DM Sans', sans-serif",
-            fontSize: "13px",
-            cursor: "pointer",
-          }}
-        >
-          Kembali ke Skill Gap
+        <div className="action-nav-pill">Action Plan</div>
+
+        <button type="button" onClick={handleBack} className="action-nav-back">
+          Skill Gap
         </button>
       </nav>
 
-      <div
-        style={{
-          position: "relative",
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          padding: "0 24px 48px",
-        }}
-      >
+      <main className="action-main">
         <div className="mesh-bg" />
         <StarField />
 
-        <div
-          style={{
-            position: "relative",
-            zIndex: 1,
-            width: "100%",
-            maxWidth: "760px",
-            animation: "slideUp 0.6s ease both",
-          }}
-        >
-          <div
-            style={{
-              textAlign: "center",
-              marginBottom: "22px",
-            }}
-          >
-            <div
-              style={{
-                width: "56px",
-                height: "56px",
-                borderRadius: "50%",
-                background: "rgba(45,140,94,0.2)",
-                border: "1.5px solid rgba(61,186,116,0.35)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "22px",
-                margin: "0 auto 14px",
-              }}
-            >
-              🗺️
+        <section className="action-content">
+          <header className="action-hero">
+            <div className="action-hero-badge">
+              <span />
+              Personalized Roadmap
             </div>
 
-            <h1
-              style={{
-                fontFamily: "'Playfair Display', serif",
-                fontWeight: 700,
-                fontSize: "clamp(24px, 4vw, 32px)",
-                margin: "0 0 10px",
-              }}
-            >
-              <span
-                style={{
-                  color: "white",
-                  textDecoration: "underline",
-                  textDecorationColor: "rgba(255,255,255,0.2)",
-                  textUnderlineOffset: "4px",
-                }}
-              >
-                Action Plan
-              </span>{" "}
-              <span style={{ color: "#3dba74" }}>Kamu</span>
+            <div className="action-hero-icon">🗺️</div>
+
+            <h1>
+              Action Plan <span>Kamu</span>
             </h1>
 
-            <p
-              style={{
-                fontFamily: "'DM Sans', sans-serif",
-                fontSize: "13px",
-                color: "rgba(255,255,255,0.5)",
-                lineHeight: 1.7,
-                margin: 0,
-              }}
-            >
+            <p>
               Roadmap belajar personal untuk menjadi{" "}
-              <span
-                style={{
-                  color: "#3dba74",
-                  fontWeight: 600,
-                }}
-              >
-                {targetRole}
-              </span>
-              .
+              <strong>{targetRole}</strong>.
             </p>
+          </header>
 
-            <p
-              style={{
-                fontFamily: "'DM Sans', sans-serif",
-                fontSize: "12px",
-                color: "rgba(255,255,255,0.35)",
-                marginTop: "8px",
-              }}
-            >
-              Confidence Score: {confidenceScore}%
-            </p>
-          </div>
-
-          <div
-            style={{
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: "16px",
-              padding: "18px 20px",
-              marginBottom: "18px",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "10px",
-              }}
-            >
-              <div>
-                <p
-                  style={{
-                    fontFamily: "'DM Sans', sans-serif",
-                    fontSize: "12px",
-                    color: "rgba(255,255,255,0.45)",
-                    margin: "0 0 4px",
-                  }}
-                >
-                  Progress Action Plan
-                </p>
-
-                <p
-                  style={{
-                    fontFamily: "'Playfair Display', serif",
-                    fontSize: "22px",
-                    color: "#3dba74",
-                    fontWeight: 700,
-                    margin: 0,
-                  }}
-                >
-                  {completedSteps}/{totalSteps} langkah
-                </p>
-              </div>
-
-              <div
-                style={{
-                  width: "54px",
-                  height: "54px",
-                  borderRadius: "50%",
-                  background: "rgba(61,186,116,0.12)",
-                  border: "1.5px solid rgba(61,186,116,0.35)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#3dba74",
-                  fontWeight: 700,
-                  fontSize: "15px",
-                }}
-              >
-                {progressPct}%
-              </div>
+          <section className="action-progress-card">
+            <div className="action-progress-copy">
+              <p className="action-small-label">Progress Action Plan</p>
+              <h2>{completedSteps}/{totalSteps || 0} langkah</h2>
+              <span>Confidence Score: {confidenceScore}%</span>
             </div>
 
-            <div
-              style={{
-                height: "6px",
-                borderRadius: "999px",
-                background: "rgba(255,255,255,0.08)",
-                overflow: "hidden",
-              }}
-            >
+            <div className="action-progress-ring">
+              <strong>{progressPct}%</strong>
+            </div>
+
+            <div className="action-progress-track">
               <div
-                style={{
-                  height: "100%",
-                  width: `${progressPct}%`,
-                  borderRadius: "999px",
-                  background:
-                    "linear-gradient(90deg, #2d8c5e, #3dba74)",
-                  transition: "width 0.8s ease",
-                }}
+                className="action-progress-fill"
+                style={{ width: `${Math.min(100, Math.max(0, progressPct))}%` }}
               />
             </div>
 
             {allCompleted && (
-              <p
-                style={{
-                  fontFamily: "'DM Sans', sans-serif",
-                  fontSize: "12px",
-                  color: "#3dba74",
-                  margin: "12px 0 0",
-                  fontWeight: 700,
-                }}
-              >
-                🎉 Semua langkah sudah selesai.
-              </p>
+              <p className="action-complete-note">🎉 Semua langkah sudah selesai.</p>
             )}
-          </div>
+          </section>
 
           {steps.length === 0 && (
-            <div
-              style={{
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: "16px",
-                padding: "22px",
-                textAlign: "center",
-              }}
-            >
-              <p
-                style={{
-                  fontFamily: "'DM Sans', sans-serif",
-                  color: "rgba(255,255,255,0.6)",
-                  margin: 0,
-                }}
-              >
-                Action plan belum tersedia. Selesaikan assessment terlebih
-                dahulu.
-              </p>
-            </div>
+            <article className="action-empty-card">
+              <div>📝</div>
+              <h3>Action plan belum tersedia</h3>
+              <p>Selesaikan assessment terlebih dahulu untuk membuka roadmap personalmu.</p>
+            </article>
           )}
 
-          {steps.map((step, index) => {
-            const cfg = getStatusConfig(step);
-            const isExpanded = expanded === step.order;
+          <div className="action-timeline">
+            {steps.map((step, index) => {
+              const cfg = getStatusConfig(step);
+              const isExpanded = expanded === step.order;
 
-            return (
-              <div
-                key={step.order}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "42px 1fr",
-                  gap: "12px",
-                  marginBottom: "12px",
-                  position: "relative",
-                }}
-              >
-                <div
-                  style={{
-                    position: "relative",
-                    display: "flex",
-                    justifyContent: "center",
-                  }}
-                >
-                  {index < steps.length - 1 && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: "42px",
-                        bottom: "-16px",
-                        width: "2px",
-                        background: step.isCompleted
-                          ? "rgba(61,186,116,0.4)"
-                          : "rgba(61,186,116,0.18)",
-                      }}
-                    />
-                  )}
-
-                  <div
-                    style={{
-                      width: "34px",
-                      height: "34px",
-                      borderRadius: "50%",
-                      background: cfg.color,
-                      border: `2px solid ${cfg.border}`,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "white",
-                      fontWeight: 700,
-                      fontSize: "13px",
-                      position: "relative",
-                      zIndex: 1,
-                    }}
-                  >
-                    {cfg.icon}
-                  </div>
-                </div>
-
-                <div
-                  onClick={() =>
-                    setExpanded(isExpanded ? null : step.order)
-                  }
-                  style={{
-                    background: cfg.bg,
-                    border: `1px solid ${cfg.border}`,
-                    borderRadius: "14px",
-                    padding: "15px 18px",
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      gap: "12px",
-                      alignItems: "flex-start",
-                    }}
-                  >
-                    <div>
-                      <p
-                        style={{
-                          fontFamily: "'DM Sans', sans-serif",
-                          fontWeight: 700,
-                          fontSize: "14px",
-                          color: step.isCompleted
-                            ? "#3dba74"
-                            : "rgba(255,255,255,0.9)",
-                          margin: "0 0 6px",
-                          textDecoration: "underline",
-                          textDecorationColor: "rgba(255,255,255,0.18)",
-                          textUnderlineOffset: "3px",
-                        }}
-                      >
-                        {step.title}
-                      </p>
-
-                      <p
-                        style={{
-                          fontFamily: "'DM Sans', sans-serif",
-                          fontSize: "12px",
-                          color: "rgba(255,255,255,0.45)",
-                          margin: 0,
-                        }}
-                      >
-                        Estimasi {step.estimatedDays} hari
-                      </p>
-                    </div>
-
-                    <span
-                      style={{
-                        fontFamily: "'DM Sans', sans-serif",
-                        fontSize: "11px",
-                        color: cfg.color,
-                        background: cfg.badgeBg,
-                        padding: "4px 10px",
-                        borderRadius: "999px",
-                        border: `1px solid ${cfg.border}`,
-                        flexShrink: 0,
-                      }}
-                    >
-                      {cfg.label}
-                    </span>
+              return (
+                <article key={step.order} className={`action-step ${cfg.tone}`}>
+                  <div className="action-step-marker">
+                    {index < steps.length - 1 && <span />}
+                    <div>{cfg.icon}</div>
                   </div>
 
-                  {isExpanded && (
-                    <div
-                      style={{
-                        marginTop: "12px",
-                        paddingTop: "12px",
-                        borderTop: "1px solid rgba(255,255,255,0.08)",
-                      }}
-                    >
-                      <p
-                        style={{
-                          fontFamily: "'DM Sans', sans-serif",
-                          fontSize: "12px",
-                          color: "rgba(255,255,255,0.55)",
-                          lineHeight: 1.7,
-                          margin: "0 0 12px",
-                        }}
-                      >
-                        {step.description}
-                      </p>
-
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          gap: "10px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: "6px",
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          <span
-                            style={{
-                              fontFamily: "'DM Sans', sans-serif",
-                              fontSize: "11px",
-                              color: "rgba(255,255,255,0.55)",
-                              background: "rgba(255,255,255,0.07)",
-                              border:
-                                "1px solid rgba(255,255,255,0.12)",
-                              padding: "3px 8px",
-                              borderRadius: "6px",
-                            }}
-                          >
-                            Step {step.order}
-                          </span>
-
-                          <span
-                            style={{
-                              fontFamily: "'DM Sans', sans-serif",
-                              fontSize: "11px",
-                              color: "rgba(255,255,255,0.55)",
-                              background: "rgba(255,255,255,0.07)",
-                              border:
-                                "1px solid rgba(255,255,255,0.12)",
-                              padding: "3px 8px",
-                              borderRadius: "6px",
-                            }}
-                          >
-                            {step.estimatedDays} hari
-                          </span>
-                        </div>
-
-                        {cfg.canStart && (
-                          <button
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleStartStep(step);
-                            }}
-                            style={{
-                              padding: "8px 16px",
-                              borderRadius: "9px",
-                              border: "none",
-                              background:
-                                step.status === "revision"
-                                  ? "#d4a844"
-                                  : "#3dba74",
-                              color: "white",
-                              fontFamily: "'DM Sans', sans-serif",
-                              fontSize: "12px",
-                              fontWeight: 600,
-                              cursor: "pointer",
-                            }}
-                          >
-                            {step.status === "revision"
-                              ? "Submit Ulang →"
-                              : "Mulai →"}
-                          </button>
-                        )}
+                  <div
+                    className="action-step-card"
+                    onClick={() => setExpanded(isExpanded ? null : step.order)}
+                  >
+                    <div className="action-step-top">
+                      <div>
+                        <p>Step {step.order}</p>
+                        <h3>{step.title}</h3>
+                        <span>Estimasi {step.estimatedDays} hari</span>
                       </div>
+
+                      <strong>{cfg.label}</strong>
                     </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr auto",
-              gap: "12px",
-              marginTop: "18px",
-            }}
-          >
-            <button
-              onClick={handleStartCurrentStep}
-              style={{
-                padding: "14px",
-                borderRadius: "12px",
-                border: "1px solid rgba(61,186,116,0.25)",
-                background: allCompleted
-                  ? "rgba(61,186,116,0.16)"
-                  : "linear-gradient(135deg, rgba(61,186,116,0.25), rgba(61,186,116,0.08))",
-                color: "#3dba74",
-                fontFamily: "'DM Sans', sans-serif",
-                fontSize: "14px",
-                fontWeight: 600,
-                cursor: "pointer",
-                transition: "all 0.2s",
-                textDecoration: "underline",
-                textDecorationColor: "rgba(61,186,116,0.25)",
-                textUnderlineOffset: "3px",
-              }}
-            >
-              {allCompleted
-                ? "Semua Langkah Selesai ✓"
-                : activeStep?.status === "revision"
-                ? "Submit Ulang Task →"
-                : "Lanjutkan Langkah Sekarang →"}
-            </button>
+                    {isExpanded && (
+                      <div className="action-step-detail">
+                        <p>{step.description}</p>
 
-            <button
-              onClick={handleGoDashboard}
-              style={{
-                padding: "14px 24px",
-                borderRadius: "12px",
-                border: "1px solid rgba(255,255,255,0.2)",
-                background: "rgba(255,255,255,0.07)",
-                color: "rgba(255,255,255,0.75)",
-                fontFamily: "'DM Sans', sans-serif",
-                fontSize: "14px",
-                fontWeight: 500,
-                cursor: "pointer",
-              }}
-            >
-              Dashboard
-            </button>
+                        <div className="action-step-footer">
+                          <div className="action-step-tags">
+                            <span>Step {step.order}</span>
+                            <span>{step.estimatedDays} hari</span>
+                          </div>
+
+                          {cfg.canStart && (
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleStartStep(step);
+                              }}
+                            >
+                              {step.status === "revision"
+                                ? "Submit Ulang →"
+                                : "Mulai →"}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
           </div>
-        </div>
-      </div>
+
+          <div className="action-cta-card">
+            <div>
+              <h3>{allCompleted ? "Roadmap selesai 🎉" : "Lanjutkan langkah aktif"}</h3>
+              <p>
+                {allCompleted
+                  ? "Kamu sudah menyelesaikan seluruh langkah. Buka dashboard untuk melihat progress."
+                  : "Mulai dari langkah yang sedang aktif agar progress kamu terus berjalan."}
+              </p>
+            </div>
+
+            <div className="action-cta-buttons">
+              <button type="button" onClick={handleStartCurrentStep}>
+                {allCompleted ? "Ke Dashboard →" : "Mulai Langkah Aktif →"}
+              </button>
+
+              <button type="button" onClick={handleGoDashboard}>
+                Dashboard
+              </button>
+            </div>
+          </div>
+        </section>
+      </main>
 
       <style>{`
-        @keyframes slideUp {
+        .action-page {
+          min-height: 100vh;
+          min-height: 100svh;
+          background: #0a1f12;
+          color: white;
+          display: flex;
+          flex-direction: column;
+          overflow-x: hidden;
+        }
+
+        .action-navbar {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+          align-items: center;
+          gap: 14px;
+          padding: 14px clamp(18px, 4vw, 40px);
+          border-bottom: 1px solid rgba(255,255,255,0.06);
+          position: relative;
+          z-index: 3;
+        }
+
+        .action-logo-wrap {
+          min-width: 0;
+          overflow: hidden;
+        }
+
+        .action-nav-pill {
+          justify-self: center;
+          padding: 7px 17px;
+          border-radius: 999px;
+          border: 1.5px solid rgba(61,186,116,0.38);
+          background: rgba(61,186,116,0.08);
+          font-family: 'DM Sans', sans-serif;
+          font-size: 12px;
+          color: rgba(255,255,255,0.82);
+          font-weight: 900;
+          white-space: nowrap;
+        }
+
+        .action-nav-back {
+          justify-self: end;
+          background: transparent;
+          border: none;
+          color: rgba(255,255,255,0.62);
+          font-family: 'DM Sans', sans-serif;
+          font-size: 13px;
+          font-weight: 800;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+
+        .action-nav-back:hover {
+          color: white;
+        }
+
+        .action-main {
+          flex: 1;
+          position: relative;
+          display: flex;
+          justify-content: center;
+          padding: clamp(24px, 5vh, 42px) clamp(14px, 4vw, 24px) 54px;
+          overflow: hidden;
+        }
+
+        .action-content {
+          position: relative;
+          z-index: 1;
+          width: 100%;
+          max-width: 900px;
+          animation: actionSlideUp 0.55s ease both;
+        }
+
+        .action-hero {
+          text-align: center;
+          max-width: 720px;
+          margin: 0 auto 22px;
+        }
+
+        .action-hero-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 7px 16px;
+          border-radius: 999px;
+          border: 1px solid rgba(61,186,116,0.3);
+          background: rgba(61,186,116,0.08);
+          color: rgba(255,255,255,0.76);
+          font-family: 'DM Sans', sans-serif;
+          font-size: 12px;
+          font-weight: 900;
+          margin-bottom: 16px;
+        }
+
+        .action-hero-badge span {
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background: #3dba74;
+          box-shadow: 0 0 9px rgba(61,186,116,0.7);
+        }
+
+        .action-hero-icon {
+          width: 62px;
+          height: 62px;
+          border-radius: 22px;
+          background: linear-gradient(135deg, rgba(45,140,94,0.25), rgba(61,186,116,0.13));
+          border: 1px solid rgba(61,186,116,0.32);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 27px;
+          margin: 0 auto 16px;
+          box-shadow: 0 18px 44px rgba(0,0,0,0.18);
+        }
+
+        .action-hero h1 {
+          font-family: 'Playfair Display', serif;
+          font-weight: 900;
+          font-size: clamp(32px, 5vw, 46px);
+          line-height: 1.08;
+          margin: 0 0 12px;
+          letter-spacing: -0.5px;
+        }
+
+        .action-hero h1 span {
+          color: #3dba74;
+          text-decoration: underline;
+          text-decoration-color: rgba(61,186,116,0.38);
+          text-underline-offset: 6px;
+        }
+
+        .action-hero p {
+          font-family: 'DM Sans', sans-serif;
+          font-size: clamp(13px, 2vw, 15px);
+          color: rgba(255,255,255,0.58);
+          line-height: 1.75;
+          margin: 0 auto;
+          max-width: 640px;
+        }
+
+        .action-hero p strong {
+          color: #3dba74;
+        }
+
+        .action-progress-card,
+        .action-empty-card,
+        .action-step-card,
+        .action-cta-card {
+          border: 1px solid rgba(255,255,255,0.1);
+          background: rgba(255,255,255,0.06);
+          border-radius: 24px;
+          backdrop-filter: blur(10px);
+          box-shadow: 0 22px 76px rgba(0,0,0,0.18);
+        }
+
+        .action-progress-card {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 18px;
+          padding: clamp(20px, 4vw, 26px);
+          margin-bottom: 18px;
+          background:
+            radial-gradient(circle at top left, rgba(61,186,116,0.16), transparent 34%),
+            rgba(255,255,255,0.065);
+        }
+
+        .action-small-label {
+          font-family: 'DM Sans', sans-serif;
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 0.09em;
+          color: rgba(126,240,170,0.72);
+          font-weight: 900;
+          margin: 0 0 8px;
+        }
+
+        .action-progress-copy h2 {
+          font-family: 'Playfair Display', serif;
+          font-size: clamp(27px, 4vw, 36px);
+          line-height: 1.1;
+          margin: 0 0 6px;
+          color: white;
+        }
+
+        .action-progress-copy span {
+          font-family: 'DM Sans', sans-serif;
+          font-size: 13px;
+          color: rgba(255,255,255,0.56);
+        }
+
+        .action-progress-ring {
+          width: 78px;
+          height: 78px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(61,186,116,0.13);
+          border: 1px solid rgba(61,186,116,0.32);
+          color: #7ef0aa;
+          font-family: 'DM Sans', sans-serif;
+        }
+
+        .action-progress-ring strong {
+          font-size: 18px;
+        }
+
+        .action-progress-track {
+          grid-column: 1 / -1;
+          height: 8px;
+          border-radius: 999px;
+          background: rgba(255,255,255,0.09);
+          overflow: hidden;
+        }
+
+        .action-progress-fill {
+          height: 100%;
+          border-radius: 999px;
+          background: linear-gradient(90deg, #2d8c5e, #3dba74);
+          transition: width 0.8s ease;
+        }
+
+        .action-complete-note {
+          grid-column: 1 / -1;
+          margin: 0;
+          color: #7ef0aa;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 13px;
+          font-weight: 900;
+        }
+
+        .action-empty-card {
+          padding: 26px;
+          text-align: center;
+          margin-bottom: 18px;
+        }
+
+        .action-empty-card div {
+          font-size: 32px;
+          margin-bottom: 10px;
+        }
+
+        .action-empty-card h3 {
+          margin: 0 0 8px;
+          font-family: 'DM Sans', sans-serif;
+        }
+
+        .action-empty-card p {
+          margin: 0;
+          color: rgba(255,255,255,0.58);
+          line-height: 1.7;
+        }
+
+        .action-timeline {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .action-step {
+          display: grid;
+          grid-template-columns: 46px minmax(0, 1fr);
+          gap: 12px;
+          position: relative;
+        }
+
+        .action-step-marker {
+          display: flex;
+          justify-content: center;
+          position: relative;
+        }
+
+        .action-step-marker > span {
+          position: absolute;
+          top: 42px;
+          bottom: -18px;
+          width: 2px;
+          background: rgba(61,186,116,0.2);
+        }
+
+        .action-step.done .action-step-marker > span {
+          background: rgba(61,186,116,0.42);
+        }
+
+        .action-step-marker > div {
+          position: relative;
+          z-index: 1;
+          width: 38px;
+          height: 38px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-weight: 900;
+          border: 2px solid rgba(255,255,255,0.15);
+          background: rgba(255,255,255,0.14);
+        }
+
+        .action-step.done .action-step-marker > div,
+        .action-step.active .action-step-marker > div {
+          background: #3dba74;
+          border-color: rgba(61,186,116,0.4);
+        }
+
+        .action-step.revision .action-step-marker > div {
+          background: #d4a844;
+          border-color: rgba(212,168,68,0.4);
+        }
+
+        .action-step.locked .action-step-marker > div {
+          background: rgba(255,255,255,0.12);
+          color: rgba(255,255,255,0.48);
+        }
+
+        .action-step-card {
+          cursor: pointer;
+          padding: 18px;
+          transition: border-color 0.2s, background 0.2s, transform 0.2s;
+        }
+
+        .action-step-card:hover {
+          transform: translateY(-1px);
+          background: rgba(255,255,255,0.075);
+        }
+
+        .action-step-top {
+          display: flex;
+          justify-content: space-between;
+          gap: 14px;
+          align-items: flex-start;
+        }
+
+        .action-step-top p {
+          margin: 0 0 6px;
+          color: rgba(126,240,170,0.66);
+          font-family: 'DM Sans', sans-serif;
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 0.09em;
+          font-weight: 900;
+        }
+
+        .action-step-top h3 {
+          margin: 0 0 6px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 15px;
+          line-height: 1.45;
+          color: rgba(255,255,255,0.92);
+        }
+
+        .action-step-top span {
+          font-family: 'DM Sans', sans-serif;
+          font-size: 12px;
+          color: rgba(255,255,255,0.45);
+        }
+
+        .action-step-top strong {
+          flex-shrink: 0;
+          padding: 5px 11px;
+          border-radius: 999px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 11px;
+          color: rgba(255,255,255,0.8);
+          background: rgba(255,255,255,0.08);
+          border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .action-step.done .action-step-top strong,
+        .action-step.active .action-step-top strong {
+          color: #7ef0aa;
+          background: rgba(61,186,116,0.13);
+          border-color: rgba(61,186,116,0.24);
+        }
+
+        .action-step.revision .action-step-top strong {
+          color: #ffd36b;
+          background: rgba(212,168,68,0.12);
+          border-color: rgba(212,168,68,0.24);
+        }
+
+        .action-step-detail {
+          margin-top: 14px;
+          padding-top: 14px;
+          border-top: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .action-step-detail > p {
+          margin: 0 0 14px;
+          color: rgba(255,255,255,0.58);
+          font-family: 'DM Sans', sans-serif;
+          font-size: 13px;
+          line-height: 1.75;
+        }
+
+        .action-step-footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .action-step-tags {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 7px;
+        }
+
+        .action-step-tags span {
+          font-family: 'DM Sans', sans-serif;
+          font-size: 11px;
+          color: rgba(255,255,255,0.58);
+          background: rgba(255,255,255,0.07);
+          border: 1px solid rgba(255,255,255,0.12);
+          padding: 5px 9px;
+          border-radius: 8px;
+          font-weight: 800;
+        }
+
+        .action-step-footer button {
+          border: none;
+          border-radius: 11px;
+          background: #3dba74;
+          color: white;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 12px;
+          font-weight: 900;
+          cursor: pointer;
+          padding: 10px 16px;
+          white-space: nowrap;
+        }
+
+        .action-step.revision .action-step-footer button {
+          background: #d4a844;
+        }
+
+        .action-cta-card {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 16px;
+          align-items: center;
+          margin-top: 18px;
+          padding: 18px;
+          background:
+            linear-gradient(135deg, rgba(45,140,94,0.24), rgba(61,186,116,0.08)),
+            rgba(255,255,255,0.06);
+        }
+
+        .action-cta-card h3 {
+          margin: 0;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 18px;
+          color: white;
+        }
+
+        .action-cta-card p {
+          margin: 6px 0 0;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 13px;
+          color: rgba(255,255,255,0.62);
+          line-height: 1.65;
+        }
+
+        .action-cta-buttons {
+          display: flex;
+          gap: 10px;
+        }
+
+        .action-cta-buttons button {
+          border-radius: 14px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 13px;
+          font-weight: 900;
+          cursor: pointer;
+          padding: 13px 16px;
+          min-height: 46px;
+          white-space: nowrap;
+        }
+
+        .action-cta-buttons button:first-child {
+          border: none;
+          background: #3dba74;
+          color: white;
+          box-shadow: 0 14px 34px rgba(45,140,94,0.28);
+        }
+
+        .action-cta-buttons button:last-child {
+          border: 1px solid rgba(255,255,255,0.13);
+          background: rgba(255,255,255,0.06);
+          color: rgba(255,255,255,0.76);
+        }
+
+        @keyframes actionSlideUp {
           from {
             opacity: 0;
             transform: translateY(18px);
@@ -747,13 +861,130 @@ export default function ActionPlanPage() {
           }
         }
 
-        @media (max-width: 760px) {
-          div[style*="grid-template-columns: 42px 1fr"] {
-            grid-template-columns: 34px 1fr !important;
+        @media (max-width: 860px) {
+          .action-progress-card,
+          .action-cta-card {
+            grid-template-columns: 1fr;
           }
 
-          div[style*="grid-template-columns: 1fr auto"] {
-            grid-template-columns: 1fr !important;
+          .action-progress-ring {
+            justify-self: start;
+          }
+
+          .action-cta-buttons {
+            width: 100%;
+          }
+
+          .action-cta-buttons button {
+            flex: 1;
+          }
+        }
+
+        @media (max-width: 560px) {
+          .action-navbar {
+            grid-template-columns: 1fr auto;
+            padding: 12px 16px;
+          }
+
+          .action-logo-wrap {
+            transform: scale(0.92);
+            transform-origin: left center;
+          }
+
+          .action-nav-pill {
+            display: none;
+          }
+
+          .action-nav-back {
+            font-size: 12px;
+          }
+
+          .action-main {
+            padding: 24px 12px 38px;
+            overflow-y: auto;
+          }
+
+          .action-hero {
+            margin-bottom: 18px;
+          }
+
+          .action-hero-badge {
+            font-size: 11px;
+            padding: 7px 13px;
+            margin-bottom: 14px;
+          }
+
+          .action-hero-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 18px;
+            font-size: 25px;
+          }
+
+          .action-hero h1 {
+            font-size: 34px;
+          }
+
+          .action-hero p {
+            font-size: 13px;
+          }
+
+          .action-progress-card,
+          .action-empty-card,
+          .action-step-card,
+          .action-cta-card {
+            border-radius: 20px;
+          }
+
+          .action-step {
+            grid-template-columns: 36px minmax(0, 1fr);
+            gap: 8px;
+          }
+
+          .action-step-marker > div {
+            width: 32px;
+            height: 32px;
+            font-size: 12px;
+          }
+
+          .action-step-marker > span {
+            top: 36px;
+          }
+
+          .action-step-card {
+            padding: 15px;
+          }
+
+          .action-step-top {
+            flex-direction: column;
+            gap: 10px;
+          }
+
+          .action-step-top strong {
+            align-self: flex-start;
+          }
+
+          .action-step-footer {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          .action-step-footer button {
+            width: 100%;
+          }
+
+          .action-cta-buttons {
+            flex-direction: column;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .action-hero h1 {
+            font-size: 31px;
+          }
+
+          .action-progress-copy h2 {
+            font-size: 27px;
           }
         }
       `}</style>
