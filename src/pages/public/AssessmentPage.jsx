@@ -1,5 +1,4 @@
-// src/pages/AssessmentPage.jsx
-
+// src/pages/public/AssessmentPage.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Logo, StarField } from "../../components/Shared";
@@ -47,96 +46,11 @@ const QUESTIONS = [
     id: 4,
     category: "Level",
     question: "Level skill kamu sekarang menurut kamu gimana?",
-    options: [
-      "beginner",
-      "intermediate",
-      "advanced",
-    ],
+    options: ["beginner", "intermediate", "advanced"],
   },
 ];
 
-const TOTAL_QUESTIONS =
-  QUESTIONS.length;
-
-export default function AssessmentPage() {
-  const navigate = useNavigate();
-
-  const { draft, setDraft } =
-    useAssessment();
-
-  // STATE
-  const [currentQ, setCurrentQ] =
-    useState(0);
-
-  const [submitting, setSubmitting] =
-    useState(false);
-
-  // ANSWERS
-  const answers =
-    draft.answers || {};
-
-  const q = QUESTIONS[currentQ];
-
-  const selected =
-    answers[q.id];
-
-  const answeredCount =
-    Object.keys(answers).length;
-
-  const progressPercent = Math.round(
-    (answeredCount /
-      TOTAL_QUESTIONS) *
-      100
-  );
-
-  // SELECT ANSWER
-  const handleSelect = (option) => {
-
-    setDraft((prev) => ({
-      ...prev,
-
-      answers: {
-        ...prev.answers,
-
-        [q.id]: option,
-      },
-    }));
-  };
-
-  // NEXT
-  const handleNext = async () => {
-
-    const updatedDraft = {
-      ...draft,
-      answers,
-    };
-
-    setDraft(updatedDraft);
-
-    // NEXT QUESTION
-    if (
-      currentQ <
-      QUESTIONS.length - 1
-    ) {
-
-      setCurrentQ((prev) => prev + 1);
-
-      return;
-    }
-
-    // PREVENT DOUBLE SUBMIT
-    if (submitting) return;
-
-    try {
-
-      setSubmitting(true);
-
-      // LOADING PAGE
-      navigate("/loading");
-
-const roleAnswer = updatedDraft.answers[3];
-const blockerAnswer = updatedDraft.answers[2];
-const levelAnswer = updatedDraft.answers[4] || "beginner";
+const TOTAL_QUESTIONS = QUESTIONS.length;
 
 const roleMap = {
   "Frontend Developer": "Frontend Developer",
@@ -163,608 +77,556 @@ const problemCategoryMap = {
   "belum punya portfolio": "Belum punya portfolio",
 };
 
-const payload = {
-  targetRole: roleMap[roleAnswer] || "Frontend Developer",
-  currentLevel: levelAnswer,
-  problemCategory:
-    problemCategoryMap[blockerAnswer] ||
-    "Bingung mulai belajar dari mana",
-  blockerType: blockerMap[blockerAnswer] || "belum_tahu_mulai",
-  maxQuestions: 3,
-  answers: QUESTIONS.map((questionItem) => ({
-    question: questionItem.question,
-    answer: updatedDraft.answers[questionItem.id] || "",
-  })),
-};
-      // API
-      const response =
-        await api.post(
-          "/assessments/analyze",
-          payload
-        );
+export default function AssessmentPage() {
+  const navigate = useNavigate();
+  const { draft, setDraft } = useAssessment();
 
-      console.log("RESPONSE:");
-      console.log(response.data);
+  const [currentQ, setCurrentQ] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
 
-      // SAVE RESULT
-     setDraft((prev) => ({
-  ...prev,
+  const answers = draft.answers || {};
+  const q = QUESTIONS[currentQ];
+  const selected = answers[q.id];
 
-  assessmentPayload: payload,
+  const answeredCount = Object.keys(answers).length;
+  const progressPercent = Math.round((answeredCount / TOTAL_QUESTIONS) * 100);
 
-  analysisResult:
-    response.data.data.analysis,
+  const handleSelect = (option) => {
+    setDraft((prev) => ({
+      ...prev,
+      answers: {
+        ...prev.answers,
+        [q.id]: option,
+      },
+    }));
+  };
 
-  skillGap:
-    response.data.data.skillGap,
+  const buildPayload = (latestAnswers) => {
+    const roleAnswer = latestAnswers[3];
+    const blockerAnswer = latestAnswers[2];
+    const levelAnswer = latestAnswers[4] || "beginner";
 
-  recommendedTasks:
-    response.data.data.recommendedTasks,
+    return {
+      targetRole: roleMap[roleAnswer] || "Frontend Developer",
+      currentLevel: levelAnswer,
+      problemCategory:
+        problemCategoryMap[blockerAnswer] || "Bingung mulai belajar dari mana",
+      blockerType: blockerMap[blockerAnswer] || "belum_tahu_mulai",
+      maxQuestions: 3,
+      answers: QUESTIONS.map((questionItem) => ({
+        question: questionItem.question,
+        answer: latestAnswers[questionItem.id] || "",
+      })),
+    };
+  };
 
-  aiResult:
-    response.data.data.ai,
-}));
-      setSubmitting(false);
+  const handleNext = async () => {
+    if (!selected || submitting) return;
+
+    const updatedDraft = {
+      ...draft,
+      answers,
+    };
+
+    setDraft(updatedDraft);
+
+    if (currentQ < QUESTIONS.length - 1) {
+      setCurrentQ((prev) => prev + 1);
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      navigate("/loading");
+
+      const payload = buildPayload(updatedDraft.answers);
+
+      const response = await api.post("/assessments/analyze", payload);
+      const data = response.data?.data || response.data;
+
+      setDraft((prev) => ({
+        ...prev,
+        assessmentPayload: payload,
+        analysisResult: data.analysis,
+        skillGap: data.skillGap,
+        recommendedTasks: data.recommendedTasks,
+        aiResult: data.ai,
+      }));
 
       navigate("/hasil-analisis");
     } catch (error) {
-
-      console.log(error);
-
+      console.log(error.response?.data || error.message);
+      alert("Gagal analyze assessment");
+    } finally {
       setSubmitting(false);
-
-      alert(
-        "Gagal analyze assessment"
-      );
     }
   };
 
-  // PREVIOUS
   const handlePrev = () => {
-
     if (currentQ > 0) {
-
       setCurrentQ((prev) => prev - 1);
-
-    } else {
-
-      navigate("/input");
+      return;
     }
+
+    navigate("/input");
+  };
+
+  const handleSkip = () => {
+    if (currentQ < QUESTIONS.length - 1) {
+      setCurrentQ((prev) => prev + 1);
+      return;
+    }
+
+    navigate("/input");
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#0a1f12",
-        color: "white",
-
-        display: "flex",
-
-        flexDirection: "column",
-      }}
-    >
-
-      {/* NAVBAR */}
-      <nav
-        style={{
-          display: "flex",
-
-          alignItems: "center",
-
-          justifyContent:
-            "space-between",
-
-          padding: "16px 40px",
-
-          borderBottom:
-            "1px solid rgba(255,255,255,0.06)",
-        }}
-      >
+    <div className="assessment-page">
+      <nav className="assessment-navbar">
         <Logo />
 
-        <div
-          style={{
-            fontFamily:
-              "'DM Sans', sans-serif",
-
-            fontSize: "13px",
-
-            color:
-              "rgba(255,255,255,0.45)",
-          }}
-        >
-          Pertanyaan{" "}
-
-          <span
-            style={{
-              color: "white",
-              fontWeight: 600,
-            }}
-          >
-            {currentQ + 1}
-          </span>{" "}
-
-          dari{" "}
-
-          <span
-            style={{
-              color: "white",
-              fontWeight: 600,
-            }}
-          >
-            {TOTAL_QUESTIONS}
-          </span>
+        <div className="assessment-nav-step">
+          Pertanyaan <span>{currentQ + 1}</span> dari <span>{TOTAL_QUESTIONS}</span>
         </div>
 
-        <button className="ghost-btn">
+        <button type="button" className="assessment-skip-desktop" onClick={handleSkip}>
           Lewati →
         </button>
       </nav>
 
-      {/* PROGRESS */}
-      <div
-        style={{
-          height: "3px",
-
-          background:
-            "rgba(255,255,255,0.08)",
-        }}
-      >
+      <div className="assessment-progress-track">
         <div
-          style={{
-            width:
-              `${progressPercent}%`,
-
-            height: "100%",
-
-            background:
-              "linear-gradient(90deg, #2d8c5e, #3dba74)",
-
-            transition:
-              "width 0.5s ease",
-          }}
+          className="assessment-progress-fill"
+          style={{ width: `${progressPercent}%` }}
         />
       </div>
 
-      {/* CONTENT */}
-      <section
-        style={{
-          flex: 1,
-
-          position: "relative",
-
-          display: "flex",
-
-          flexDirection: "column",
-
-          alignItems: "center",
-
-          justifyContent: "center",
-
-          padding:
-            "40px 24px 24px",
-
-          overflow: "hidden",
-        }}
-      >
+      <main className="assessment-main">
         <div className="mesh-bg" />
-
         <StarField />
 
-        <div
-          style={{
-            position: "relative",
-
-            zIndex: 1,
-
-            width: "100%",
-
-            maxWidth: "600px",
-          }}
-        >
-
-          {/* HEADER */}
-          <div
-            style={{
-              display: "flex",
-
-              alignItems: "center",
-
-              justifyContent:
-                "space-between",
-
-              marginBottom: "14px",
-            }}
-          >
-
-            <div
-              style={{
-                fontFamily:
-                  "'DM Sans', sans-serif",
-
-                fontSize: "13px",
-
-                color:
-                  "rgba(255,255,255,0.4)",
-              }}
-            >
-              Langkah{" "}
-
-              <span
-                style={{
-                  color:
-                    "rgba(255,255,255,0.8)",
-
-                  fontWeight: 600,
-                }}
-              >
-                {currentQ + 1}
-              </span>{" "}
-
-              dari {TOTAL_QUESTIONS}
+        <section className="assessment-content">
+          <div className="assessment-top-row">
+            <div className="assessment-small-step">
+              Langkah <span>{currentQ + 1}</span> dari {TOTAL_QUESTIONS}
             </div>
 
-            <div
-              style={{
-                display: "flex",
-
-                alignItems: "center",
-
-                gap: "28px",
-              }}
-            >
-
-              <div
-                className="badge-pill"
-                style={{
-                  marginBottom: 0,
-
-                  fontSize: "11px",
-
-                  padding:
-                    "4px 12px",
-                }}
-              >
-
-                <span
-                  style={{
-                    width: "5px",
-
-                    height: "5px",
-
-                    borderRadius:
-                      "50%",
-
-                    background:
-                      "#4de89a",
-
-                    flexShrink: 0,
-                  }}
-                />
-
+            <div className="assessment-meta">
+              <div className="badge-pill assessment-badge">
+                <span className="assessment-badge-dot" />
                 Assessment Karir
               </div>
 
-              <div
-                style={{
-                  fontFamily:
-                    "'DM Sans', sans-serif",
-
-                  fontSize: "12px",
-
-                  color:
-                    "rgba(255,255,255,0.35)",
-                }}
-              >
-                {progressPercent}%
-              </div>
+              <span className="assessment-percent">{progressPercent}%</span>
             </div>
           </div>
 
-          {/* CARD */}
-          <div
-            style={{
-              background:
-                "rgba(255,255,255,0.05)",
-
-              border:
-                "1px solid rgba(255,255,255,0.1)",
-
-              borderRadius: "16px",
-
-              padding: "28px",
-
-              backdropFilter:
-                "blur(8px)",
-            }}
-          >
-
-            {/* TOP */}
-            <div
-              style={{
-                display: "flex",
-
-                justifyContent:
-                  "space-between",
-
-                alignItems: "center",
-
-                marginBottom: "16px",
-              }}
-            >
-
-              <span
-                style={{
-                  fontFamily:
-                    "'DM Sans', sans-serif",
-
-                  fontSize: "12px",
-
-                  color:
-                    "rgba(255,255,255,0.35)",
-                }}
-              >
-                Pertanyaan{" "}
-                {currentQ + 1}
-              </span>
-
-              <span
-                style={{
-                  fontFamily:
-                    "'DM Sans', sans-serif",
-
-                  fontSize: "11px",
-
-                  color:
-                    "rgba(100, 220, 150, 0.8)",
-
-                  background:
-                    "rgba(45,140,94,0.15)",
-
-                  border:
-                    "1px solid rgba(45,140,94,0.3)",
-
-                  borderRadius:
-                    "999px",
-
-                  padding:
-                    "3px 10px",
-                }}
-              >
-                {q.category}
-              </span>
+          <div className="assessment-card">
+            <div className="assessment-card-header">
+              <span>Pertanyaan {currentQ + 1}</span>
+              <span>{q.category}</span>
             </div>
 
-            {/* QUESTION */}
-            <h2
-              style={{
-                fontFamily:
-                  "'Playfair Display', serif",
+            <h1 className="assessment-question">{q.question}</h1>
 
-                fontWeight: 700,
+            <div className="assessment-options">
+              {q.options.map((option) => {
+                const isSelected = selected === option;
 
-                fontSize:
-                  "clamp(18px, 3vw, 24px)",
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => handleSelect(option)}
+                    className={`assessment-option ${isSelected ? "selected" : ""}`}
+                  >
+                    <span className="assessment-radio">
+                      {isSelected && <span />}
+                    </span>
 
-                lineHeight: 1.3,
-
-                marginBottom: "20px",
-              }}
-            >
-              {q.question}
-            </h2>
-
-            {/* OPTIONS */}
-            <div
-              style={{
-                display: "flex",
-
-                flexDirection:
-                  "column",
-
-                gap: "10px",
-
-                marginBottom: "20px",
-              }}
-            >
-
-              {q.options.map(
-                (option) => {
-
-                  const isSelected =
-                    selected ===
-                    option;
-
-                  return (
-                    <button
-                      key={option}
-
-                      onClick={() =>
-                        handleSelect(
-                          option
-                        )
-                      }
-
-                      style={{
-                        display:
-                          "flex",
-
-                        alignItems:
-                          "center",
-
-                        gap: "12px",
-
-                        padding:
-                          "14px 16px",
-
-                        borderRadius:
-                          "10px",
-
-                        border:
-                          isSelected
-                            ? "1px solid rgba(45,140,94,0.5)"
-                            : "1px solid rgba(255,255,255,0.08)",
-
-                        background:
-                          isSelected
-                            ? "rgba(45,140,94,0.15)"
-                            : "rgba(255,255,255,0.03)",
-
-                        cursor:
-                          "pointer",
-
-                        textAlign:
-                          "left",
-
-                        transition:
-                          "all 0.18s",
-
-                        width: "100%",
-                      }}
-                    >
-
-                      <div
-                        style={{
-                          width: "18px",
-
-                          height:
-                            "18px",
-
-                          borderRadius:
-                            "50%",
-
-                          flexShrink: 0,
-
-                          border:
-                            isSelected
-                              ? "2px solid #3dba74"
-                              : "2px solid rgba(255,255,255,0.25)",
-
-                          display:
-                            "flex",
-
-                          alignItems:
-                            "center",
-
-                          justifyContent:
-                            "center",
-                        }}
-                      >
-
-                        {isSelected && (
-                          <div
-                            style={{
-                              width:
-                                "8px",
-
-                              height:
-                                "8px",
-
-                              borderRadius:
-                                "50%",
-
-                              background:
-                                "#3dba74",
-                            }}
-                          />
-                        )}
-                      </div>
-
-                      <span
-                        style={{
-                          fontFamily:
-                            "'DM Sans', sans-serif",
-
-                          fontSize:
-                            "14px",
-
-                          color:
-                            isSelected
-                              ? "rgba(255,255,255,0.95)"
-                              : "rgba(255,255,255,0.65)",
-                        }}
-                      >
-                        {option}
-                      </span>
-                    </button>
-                  );
-                }
-              )}
+                    <span className="assessment-option-text">{option}</span>
+                  </button>
+                );
+              })}
             </div>
 
-            {/* FOOTER */}
-            <div
-              style={{
-                display: "flex",
-
-                justifyContent:
-                  "space-between",
-
-                alignItems: "center",
-              }}
-            >
-
+            <div className="assessment-actions">
               <button
+                type="button"
                 onClick={handlePrev}
-
-                className="ghost-btn"
+                className="assessment-ghost-button"
               >
                 ← Sebelumnya
               </button>
 
               <button
+                type="button"
                 onClick={handleNext}
-
-                className="cta-btn"
-
-                style={{
-                  padding:
-                    "10px 24px",
-
-                  fontSize: "13px",
-
-                  animation: "none",
-                }}
-
-                disabled={
-                  !selected ||
-                  submitting
-                }
+                className="assessment-primary-button"
+                disabled={!selected || submitting}
               >
                 {submitting
                   ? "Analyzing..."
-                  : currentQ ===
-                    QUESTIONS.length -
-                      1
+                  : currentQ === QUESTIONS.length - 1
                   ? "Analisis AI →"
                   : "Selanjutnya →"}
               </button>
             </div>
           </div>
 
-          {/* COUNT */}
-          <p
-            style={{
-              textAlign: "center",
-
-              marginTop: "16px",
-
-              fontFamily:
-                "'DM Sans', sans-serif",
-
-              fontSize: "12px",
-
-              color:
-                "rgba(255,255,255,0.3)",
-            }}
-          >
-            {answeredCount} dari{" "}
-            {TOTAL_QUESTIONS} pertanyaan
-            dijawab
+          <p className="assessment-count">
+            {answeredCount} dari {TOTAL_QUESTIONS} pertanyaan dijawab
           </p>
-        </div>
-      </section>
+        </section>
+      </main>
+
+      <style>{`
+        .assessment-page {
+          min-height: 100vh;
+          background: #0a1f12;
+          color: white;
+          display: flex;
+          flex-direction: column;
+          overflow-x: hidden;
+        }
+
+        .assessment-navbar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          padding: 16px clamp(20px, 4vw, 40px);
+          border-bottom: 1px solid rgba(255,255,255,0.06);
+          position: relative;
+          z-index: 2;
+        }
+
+        .assessment-nav-step,
+        .assessment-small-step,
+        .assessment-percent {
+          font-family: 'DM Sans', sans-serif;
+          font-size: 13px;
+          color: rgba(255,255,255,0.45);
+          white-space: nowrap;
+        }
+
+        .assessment-nav-step span,
+        .assessment-small-step span {
+          color: white;
+          font-weight: 800;
+        }
+
+        .assessment-skip-desktop,
+        .assessment-ghost-button {
+          background: transparent;
+          border: none;
+          color: rgba(255,255,255,0.55);
+          font-family: 'DM Sans', sans-serif;
+          font-size: 13px;
+          font-weight: 800;
+          cursor: pointer;
+          transition: color 0.2s;
+          white-space: nowrap;
+        }
+
+        .assessment-skip-desktop:hover,
+        .assessment-ghost-button:hover {
+          color: white;
+        }
+
+        .assessment-progress-track {
+          height: 3px;
+          background: rgba(255,255,255,0.08);
+          flex-shrink: 0;
+        }
+
+        .assessment-progress-fill {
+          height: 100%;
+          background: linear-gradient(90deg, #2d8c5e, #3dba74);
+          transition: width 0.45s ease;
+        }
+
+        .assessment-main {
+          flex: 1;
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: clamp(28px, 6vh, 56px) clamp(16px, 4vw, 24px) 28px;
+          overflow: hidden;
+        }
+
+        .assessment-content {
+          position: relative;
+          z-index: 1;
+          width: 100%;
+          max-width: 660px;
+          animation: assessmentSlideUp 0.45s ease both;
+        }
+
+        .assessment-top-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 14px;
+          margin-bottom: 14px;
+        }
+
+        .assessment-meta {
+          display: flex;
+          align-items: center;
+          gap: 18px;
+          min-width: 0;
+        }
+
+        .assessment-badge {
+          margin-bottom: 0;
+          font-size: 11px;
+          padding: 5px 12px;
+        }
+
+        .assessment-badge-dot {
+          width: 5px;
+          height: 5px;
+          border-radius: 50%;
+          background: #4de89a;
+          flex-shrink: 0;
+          box-shadow: 0 0 8px rgba(77,232,154,0.7);
+        }
+
+        .assessment-card {
+          background: rgba(255,255,255,0.055);
+          border: 1px solid rgba(255,255,255,0.11);
+          border-radius: 18px;
+          padding: clamp(18px, 4vw, 30px);
+          backdrop-filter: blur(8px);
+          box-shadow: 0 20px 70px rgba(0,0,0,0.18);
+        }
+
+        .assessment-card-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 14px;
+          margin-bottom: 18px;
+          font-family: 'DM Sans', sans-serif;
+        }
+
+        .assessment-card-header span:first-child {
+          font-size: 12px;
+          color: rgba(255,255,255,0.36);
+        }
+
+        .assessment-card-header span:last-child {
+          font-size: 11px;
+          color: rgba(100, 220, 150, 0.88);
+          background: rgba(45,140,94,0.15);
+          border: 1px solid rgba(45,140,94,0.3);
+          border-radius: 999px;
+          padding: 4px 11px;
+          white-space: nowrap;
+        }
+
+        .assessment-question {
+          font-family: 'Playfair Display', serif;
+          font-weight: 800;
+          font-size: clamp(22px, 4vw, 30px);
+          line-height: 1.25;
+          margin: 0 0 22px;
+          letter-spacing: -0.3px;
+        }
+
+        .assessment-options {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          margin-bottom: 22px;
+        }
+
+        .assessment-option {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          width: 100%;
+          padding: 14px 16px;
+          border-radius: 12px;
+          border: 1px solid rgba(255,255,255,0.08);
+          background: rgba(255,255,255,0.035);
+          cursor: pointer;
+          text-align: left;
+          transition: background 0.18s, border-color 0.18s, transform 0.18s;
+        }
+
+        .assessment-option:hover {
+          background: rgba(255,255,255,0.06);
+          transform: translateY(-1px);
+        }
+
+        .assessment-option.selected {
+          border-color: rgba(45,140,94,0.55);
+          background: rgba(45,140,94,0.16);
+        }
+
+        .assessment-radio {
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          flex-shrink: 0;
+          border: 2px solid rgba(255,255,255,0.25);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .assessment-option.selected .assessment-radio {
+          border-color: #3dba74;
+        }
+
+        .assessment-radio span {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: #3dba74;
+        }
+
+        .assessment-option-text {
+          font-family: 'DM Sans', sans-serif;
+          font-size: 14px;
+          line-height: 1.45;
+          color: rgba(255,255,255,0.72);
+        }
+
+        .assessment-option.selected .assessment-option-text {
+          color: rgba(255,255,255,0.96);
+          font-weight: 700;
+        }
+
+        .assessment-actions {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 14px;
+        }
+
+        .assessment-primary-button {
+          border: none;
+          border-radius: 12px;
+          padding: 12px 25px;
+          background: rgba(45, 140, 94, 0.95);
+          color: white;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 13px;
+          font-weight: 900;
+          cursor: pointer;
+          transition: transform 0.2s, background 0.2s, opacity 0.2s;
+          white-space: nowrap;
+        }
+
+        .assessment-primary-button:hover:not(:disabled) {
+          background: #3dba74;
+          transform: translateY(-1px);
+        }
+
+        .assessment-primary-button:disabled {
+          opacity: 0.42;
+          cursor: not-allowed;
+        }
+
+        .assessment-count {
+          text-align: center;
+          margin: 16px 0 0;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 12px;
+          color: rgba(255,255,255,0.32);
+        }
+
+        @keyframes assessmentSlideUp {
+          from {
+            opacity: 0;
+            transform: translateY(16px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @media (max-width: 720px) {
+          .assessment-navbar {
+            padding: 14px 18px;
+          }
+
+          .assessment-skip-desktop {
+            display: none;
+          }
+
+          .assessment-main {
+            align-items: flex-start;
+            padding: 30px 16px 24px;
+          }
+
+          .assessment-top-row {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 10px;
+          }
+
+          .assessment-meta {
+            width: 100%;
+            justify-content: space-between;
+          }
+
+          .assessment-card-header {
+            align-items: flex-start;
+          }
+
+          .assessment-actions {
+            flex-direction: column-reverse;
+            align-items: stretch;
+          }
+
+          .assessment-primary-button,
+          .assessment-ghost-button {
+            width: 100%;
+            min-height: 44px;
+            text-align: center;
+          }
+
+          .assessment-ghost-button {
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+          }
+        }
+
+        @media (max-width: 430px) {
+          .assessment-nav-step {
+            display: none;
+          }
+
+          .assessment-navbar {
+            gap: 10px;
+          }
+
+          .assessment-question {
+            font-size: 22px;
+          }
+
+          .assessment-option {
+            padding: 13px 14px;
+          }
+
+          .assessment-option-text {
+            font-size: 13px;
+          }
+        }
+
+        @media (min-width: 1024px) {
+          .assessment-main {
+            padding-top: 62px;
+            padding-bottom: 42px;
+          }
+        }
+      `}</style>
     </div>
   );
 }
