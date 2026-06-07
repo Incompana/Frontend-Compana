@@ -88,8 +88,14 @@ export default function AssessmentPage() {
   const q = QUESTIONS[currentQ];
   const selected = answers[q.id];
 
-  const answeredCount = Object.keys(answers).length;
-  const progressPercent = Math.round((answeredCount / TOTAL_QUESTIONS) * 100);
+  const answeredCount = Object.values(answers).filter(Boolean).length;
+
+  /*
+    Progress visual sengaja mengikuti posisi pertanyaan, bukan jumlah jawaban
+    lama di draft. Ini mencegah kasus di HP progress terlihat 100% saat user
+    kembali ke pertanyaan pertama.
+  */
+  const progressPercent = Math.round(((currentQ + 1) / TOTAL_QUESTIONS) * 100);
 
   const handleSelect = (option) => {
     setDraft((prev) => ({
@@ -183,13 +189,19 @@ export default function AssessmentPage() {
   return (
     <div className="assessment-page">
       <nav className="assessment-navbar">
-        <Logo />
+        <div className="assessment-logo-wrap">
+          <Logo />
+        </div>
 
         <div className="assessment-nav-step">
           Pertanyaan <span>{currentQ + 1}</span> dari <span>{TOTAL_QUESTIONS}</span>
         </div>
 
-        <button type="button" className="assessment-skip-desktop" onClick={handleSkip}>
+        <button
+          type="button"
+          className="assessment-skip-desktop"
+          onClick={handleSkip}
+        >
           Lewati →
         </button>
       </nav>
@@ -277,6 +289,14 @@ export default function AssessmentPage() {
           <p className="assessment-count">
             {answeredCount} dari {TOTAL_QUESTIONS} pertanyaan dijawab
           </p>
+
+          <button
+            type="button"
+            onClick={handleSkip}
+            className="assessment-skip-mobile"
+          >
+            Lewati pertanyaan ini →
+          </button>
         </section>
       </main>
 
@@ -291,14 +311,20 @@ export default function AssessmentPage() {
         }
 
         .assessment-navbar {
-          display: flex;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto auto;
           align-items: center;
-          justify-content: space-between;
-          gap: 16px;
+          gap: 18px;
           padding: 16px clamp(20px, 4vw, 40px);
           border-bottom: 1px solid rgba(255,255,255,0.06);
           position: relative;
           z-index: 2;
+          min-width: 0;
+        }
+
+        .assessment-logo-wrap {
+          min-width: 0;
+          overflow: hidden;
         }
 
         .assessment-nav-step,
@@ -317,6 +343,7 @@ export default function AssessmentPage() {
         }
 
         .assessment-skip-desktop,
+        .assessment-skip-mobile,
         .assessment-ghost-button {
           background: transparent;
           border: none;
@@ -325,13 +352,18 @@ export default function AssessmentPage() {
           font-size: 13px;
           font-weight: 800;
           cursor: pointer;
-          transition: color 0.2s;
+          transition: color 0.2s, border-color 0.2s;
           white-space: nowrap;
         }
 
         .assessment-skip-desktop:hover,
+        .assessment-skip-mobile:hover,
         .assessment-ghost-button:hover {
           color: white;
+        }
+
+        .assessment-skip-mobile {
+          display: none;
         }
 
         .assessment-progress-track {
@@ -551,44 +583,83 @@ export default function AssessmentPage() {
           }
         }
 
-        @media (max-width: 720px) {
+        @media (max-width: 860px) {
           .assessment-navbar {
+            grid-template-columns: 1fr;
+            justify-items: center;
             padding: 14px 18px;
+            gap: 0;
           }
 
+          .assessment-logo-wrap {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+          }
+
+          .assessment-nav-step,
           .assessment-skip-desktop {
             display: none;
           }
 
           .assessment-main {
             align-items: flex-start;
-            padding: 30px 16px 24px;
+            padding: 26px 14px 24px;
+          }
+
+          .assessment-content {
+            max-width: 100%;
           }
 
           .assessment-top-row {
-            align-items: flex-start;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: 1fr;
             gap: 10px;
+            margin-bottom: 12px;
+          }
+
+          .assessment-small-step {
+            text-align: center;
+            font-size: 13px;
           }
 
           .assessment-meta {
             width: 100%;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            gap: 10px;
+          }
+
+          .assessment-badge {
+            justify-content: center;
+            width: 100%;
+            box-sizing: border-box;
+          }
+
+          .assessment-percent {
+            font-size: 12px;
+          }
+
+          .assessment-card {
+            border-radius: 16px;
+            padding: 22px 18px;
           }
 
           .assessment-card-header {
-            align-items: flex-start;
+            margin-bottom: 16px;
           }
 
           .assessment-actions {
             flex-direction: column-reverse;
             align-items: stretch;
+            gap: 10px;
           }
 
           .assessment-primary-button,
           .assessment-ghost-button {
             width: 100%;
-            min-height: 44px;
+            min-height: 46px;
             text-align: center;
           }
 
@@ -596,27 +667,62 @@ export default function AssessmentPage() {
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 12px;
           }
+
+          .assessment-skip-mobile {
+            display: block;
+            margin: 12px auto 0;
+            padding: 10px 14px;
+            border-radius: 12px;
+          }
         }
 
-        @media (max-width: 430px) {
-          .assessment-nav-step {
-            display: none;
+        @media (max-width: 480px) {
+          .assessment-main {
+            padding-left: 12px;
+            padding-right: 12px;
           }
 
-          .assessment-navbar {
-            gap: 10px;
+          .assessment-card {
+            padding: 20px 16px;
           }
 
           .assessment-question {
-            font-size: 22px;
+            font-size: 24px;
           }
 
           .assessment-option {
             padding: 13px 14px;
+            min-height: 56px;
+          }
+
+          .assessment-option-text {
+            font-size: 14px;
+          }
+
+          .assessment-card-header span:first-child {
+            font-size: 11px;
+          }
+
+          .assessment-card-header span:last-child {
+            font-size: 11px;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .assessment-question {
+            font-size: 22px;
           }
 
           .assessment-option-text {
             font-size: 13px;
+          }
+
+          .assessment-meta {
+            grid-template-columns: 1fr;
+          }
+
+          .assessment-percent {
+            text-align: center;
           }
         }
 
