@@ -5,6 +5,13 @@ import { Logo, StarField } from "../../components/Shared";
 import { useAssessment } from "../../context/AssessmentContext";
 import api from "../../api/axios";
 
+const MIN_LOADING_TIME_MS = 16000;
+
+const wait = (ms) =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+
 const QUESTIONS = [
   {
     id: 1,
@@ -91,9 +98,8 @@ export default function AssessmentPage() {
   const answeredCount = Object.values(answers).filter(Boolean).length;
 
   /*
-    Progress visual sengaja mengikuti posisi pertanyaan, bukan jumlah jawaban
-    lama di draft. Ini mencegah kasus di HP progress terlihat 100% saat user
-    kembali ke pertanyaan pertama.
+    Progress visual mengikuti posisi pertanyaan, bukan jumlah jawaban lama
+    di draft. Ini mencegah progress terlihat 100% saat user kembali ke Q1.
   */
   const progressPercent = Math.round(((currentQ + 1) / TOTAL_QUESTIONS) * 100);
 
@@ -143,11 +149,20 @@ export default function AssessmentPage() {
 
     try {
       setSubmitting(true);
-      navigate("/loading");
 
       const payload = buildPayload(updatedDraft.answers);
 
-      const response = await api.post("/assessments/analyze", payload);
+      navigate("/loading");
+
+      /*
+        Request AI tetap langsung berjalan, tapi halaman loading dipertahankan
+        minimal 16 detik supaya user sempat membaca quote penyemangat.
+      */
+      const [response] = await Promise.all([
+        api.post("/assessments/analyze", payload),
+        wait(MIN_LOADING_TIME_MS),
+      ]);
+
       const data = response.data?.data || response.data;
 
       setDraft((prev) => ({
