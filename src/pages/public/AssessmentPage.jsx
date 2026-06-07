@@ -6,10 +6,24 @@ import { useAssessment } from "../../context/AssessmentContext";
 import api from "../../api/axios";
 
 const MIN_LOADING_TIME_MS = 16000;
+const SKIP_LOADING_EVENT = "compana:skip-loading";
 
-const wait = (ms) =>
+const waitForMinimumLoading = (ms) =>
   new Promise((resolve) => {
-    setTimeout(resolve, ms);
+    let isDone = false;
+
+    const finish = () => {
+      if (isDone) return;
+
+      isDone = true;
+      window.removeEventListener(SKIP_LOADING_EVENT, finish);
+      clearTimeout(timer);
+      resolve();
+    };
+
+    const timer = setTimeout(finish, ms);
+
+    window.addEventListener(SKIP_LOADING_EVENT, finish, { once: true });
   });
 
 const QUESTIONS = [
@@ -156,11 +170,12 @@ export default function AssessmentPage() {
 
       /*
         Request AI tetap langsung berjalan, tapi halaman loading dipertahankan
-        minimal 16 detik supaya user sempat membaca quote penyemangat.
+        minimal 16 detik. Kalau user menekan tombol "Lewati", delay ini
+        dipotong dan app akan lanjut setelah response AI siap.
       */
       const [response] = await Promise.all([
         api.post("/assessments/analyze", payload),
-        wait(MIN_LOADING_TIME_MS),
+        waitForMinimumLoading(MIN_LOADING_TIME_MS),
       ]);
 
       const data = response.data?.data || response.data;

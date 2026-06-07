@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { Logo, StarField } from "../../components/Shared";
 
+const SKIP_LOADING_EVENT = "compana:skip-loading";
+
 const QUOTES = [
   {
     text: "Mulailah dari tempatmu berada. Gunakan yang kamu punya. Lakukan yang kamu bisa.",
@@ -40,6 +42,7 @@ export default function LoadingScreen({
 }) {
   const [activeQuote, setActiveQuote] = useState(0);
   const [fade, setFade] = useState(true);
+  const [skipping, setSkipping] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -48,7 +51,7 @@ export default function LoadingScreen({
       setTimeout(() => {
         setActiveQuote((prev) => (prev + 1) % QUOTES.length);
         setFade(true);
-      }, 350);
+      }, 320);
     }, 3800);
 
     return () => clearInterval(interval);
@@ -70,7 +73,19 @@ export default function LoadingScreen({
     setTimeout(() => {
       setActiveQuote(index);
       setFade(true);
-    }, 280);
+    }, 260);
+  };
+
+  const handleSkipLoading = () => {
+    if (skipping) return;
+
+    setSkipping(true);
+
+    window.dispatchEvent(new Event(SKIP_LOADING_EVENT));
+
+    if (onSkip) {
+      onSkip();
+    }
   };
 
   const quote = QUOTES[activeQuote];
@@ -86,11 +101,9 @@ export default function LoadingScreen({
           Pertanyaan <span>{currentQuestion}</span> dari <span>{totalQuestions}</span>
         </div>
 
-        {onSkip && (
-          <button type="button" onClick={onSkip} className="loading-skip">
-            Lewati →
-          </button>
-        )}
+        <button type="button" onClick={handleSkipLoading} className="loading-skip">
+          {skipping ? "Menyiapkan..." : "Lewati →"}
+        </button>
       </nav>
 
       <main className="loading-main">
@@ -121,7 +134,7 @@ export default function LoadingScreen({
             <div className="loading-card-glow" />
 
             <div className="loading-card-top">
-              <div>
+              <div className="loading-title-block">
                 <p className="loading-eyebrow">Quote penyemangat</p>
                 <h1>Tenang, prosesmu sedang dibaca AI</h1>
               </div>
@@ -141,7 +154,7 @@ export default function LoadingScreen({
                     .slice(0, 2)}
                 </div>
 
-                <div>
+                <div className="loading-author-text">
                   <p>{quote.author}</p>
                   <span>{quote.role}</span>
                 </div>
@@ -161,9 +174,19 @@ export default function LoadingScreen({
             </div>
           </article>
 
+          <button
+            type="button"
+            onClick={handleSkipLoading}
+            disabled={skipping}
+            className="loading-skip-main"
+          >
+            {skipping ? "Sebentar, hasil sedang disiapkan..." : "Lewati dan lihat hasil →"}
+          </button>
+
           <p className="loading-note">
             Compana sedang memetakan target role, skill gap, dan action plan
-            pertamamu.
+            pertamamu. Kalau hasil AI sudah siap, tombol lewati akan langsung
+            membawamu ke halaman hasil.
           </p>
         </section>
       </main>
@@ -171,6 +194,7 @@ export default function LoadingScreen({
       <style>{`
         .loading-page {
           min-height: 100vh;
+          min-height: 100svh;
           background: #0a1f12;
           color: white;
           display: flex;
@@ -187,6 +211,7 @@ export default function LoadingScreen({
           border-bottom: 1px solid rgba(255,255,255,0.06);
           position: relative;
           z-index: 2;
+          flex-shrink: 0;
         }
 
         .loading-logo-wrap {
@@ -225,10 +250,11 @@ export default function LoadingScreen({
         .loading-main {
           position: relative;
           flex: 1;
+          min-height: 0;
           display: flex;
           justify-content: center;
           align-items: center;
-          padding: clamp(28px, 6vh, 56px) clamp(16px, 4vw, 24px) 34px;
+          padding: clamp(22px, 5vh, 48px) clamp(14px, 4vw, 24px) 28px;
           overflow: hidden;
         }
 
@@ -236,7 +262,7 @@ export default function LoadingScreen({
           position: relative;
           z-index: 1;
           width: 100%;
-          max-width: 760px;
+          max-width: 740px;
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -256,7 +282,7 @@ export default function LoadingScreen({
           font-family: 'DM Sans', sans-serif;
           font-size: 13px;
           font-weight: 800;
-          margin-bottom: 20px;
+          margin-bottom: 18px;
           text-align: center;
         }
 
@@ -271,7 +297,7 @@ export default function LoadingScreen({
 
         .loading-progress-block {
           width: 100%;
-          margin-bottom: 22px;
+          margin-bottom: 18px;
         }
 
         .loading-progress-top {
@@ -304,11 +330,11 @@ export default function LoadingScreen({
         .loading-quote-card {
           position: relative;
           width: 100%;
-          min-height: 360px;
+          min-height: 340px;
           background: linear-gradient(145deg, rgba(255,255,255,0.98), rgba(235,246,240,0.96));
           border: 1px solid rgba(255,255,255,0.18);
           border-radius: 28px;
-          padding: clamp(24px, 4vw, 38px);
+          padding: clamp(22px, 4vw, 36px);
           box-shadow: 0 24px 90px rgba(0,0,0,0.36);
           color: #143522;
           overflow: hidden;
@@ -335,7 +361,11 @@ export default function LoadingScreen({
           align-items: flex-start;
           justify-content: space-between;
           gap: 18px;
-          margin-bottom: 26px;
+          margin-bottom: 22px;
+        }
+
+        .loading-title-block {
+          min-width: 0;
         }
 
         .loading-eyebrow {
@@ -350,7 +380,7 @@ export default function LoadingScreen({
 
         .loading-card-top h1 {
           font-family: 'Playfair Display', serif;
-          font-size: clamp(26px, 4vw, 38px);
+          font-size: clamp(25px, 4vw, 36px);
           line-height: 1.13;
           margin: 0;
           color: #143522;
@@ -358,15 +388,15 @@ export default function LoadingScreen({
         }
 
         .loading-accent {
-          width: 58px;
-          height: 58px;
+          width: 56px;
+          height: 56px;
           border-radius: 18px;
           display: flex;
           align-items: center;
           justify-content: center;
           background: rgba(45,140,94,0.1);
           border: 1px solid rgba(45,140,94,0.16);
-          font-size: 28px;
+          font-size: 27px;
           flex-shrink: 0;
         }
 
@@ -376,7 +406,7 @@ export default function LoadingScreen({
           display: flex;
           flex-direction: column;
           justify-content: center;
-          transition: opacity 0.35s ease, transform 0.35s ease;
+          transition: opacity 0.32s ease, transform 0.32s ease;
         }
 
         .loading-quote-body.show {
@@ -392,10 +422,10 @@ export default function LoadingScreen({
         .loading-quote-text {
           font-family: 'Playfair Display', serif;
           font-weight: 800;
-          font-size: clamp(22px, 4vw, 32px);
+          font-size: clamp(21px, 4vw, 31px);
           color: #2d8c5e;
           line-height: 1.45;
-          margin: 0 0 28px;
+          margin: 0 0 26px;
           text-align: left;
         }
 
@@ -420,6 +450,10 @@ export default function LoadingScreen({
           flex-shrink: 0;
         }
 
+        .loading-author-text {
+          min-width: 0;
+        }
+
         .loading-author p {
           margin: 0;
           font-family: 'DM Sans', sans-serif;
@@ -440,7 +474,7 @@ export default function LoadingScreen({
           display: flex;
           justify-content: center;
           gap: 9px;
-          margin-top: 28px;
+          margin-top: 26px;
         }
 
         .loading-dots button {
@@ -459,13 +493,39 @@ export default function LoadingScreen({
           background: #2d8c5e;
         }
 
+        .loading-skip-main {
+          margin-top: 16px;
+          width: 100%;
+          border: 1px solid rgba(61,186,116,0.3);
+          background: rgba(61,186,116,0.12);
+          color: #7ef0aa;
+          border-radius: 14px;
+          padding: 13px 18px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 13px;
+          font-weight: 900;
+          cursor: pointer;
+          transition: background 0.2s, transform 0.2s, opacity 0.2s;
+        }
+
+        .loading-skip-main:hover:not(:disabled) {
+          background: rgba(61,186,116,0.18);
+          transform: translateY(-1px);
+        }
+
+        .loading-skip-main:disabled {
+          opacity: 0.65;
+          cursor: wait;
+        }
+
         .loading-note {
-          margin: 18px 0 0;
+          margin: 14px 0 0;
           text-align: center;
           font-family: 'DM Sans', sans-serif;
           font-size: 13px;
           color: rgba(255,255,255,0.46);
           line-height: 1.6;
+          max-width: 560px;
         }
 
         @keyframes loadingSlideUp {
@@ -481,65 +541,156 @@ export default function LoadingScreen({
 
         @media (max-width: 720px) {
           .loading-navbar {
-            grid-template-columns: 1fr;
-            justify-items: center;
-            gap: 0;
-            padding: 14px 18px;
+            grid-template-columns: 1fr auto;
+            justify-items: initial;
+            gap: 12px;
+            padding: 12px 16px;
           }
 
-          .loading-nav-status,
-          .loading-skip {
+          .loading-logo-wrap {
+            transform: scale(0.92);
+            transform-origin: left center;
+          }
+
+          .loading-nav-status {
             display: none;
+          }
+
+          .loading-skip {
+            display: inline-flex;
+            justify-self: end;
+            color: rgba(126,240,170,0.85);
           }
 
           .loading-main {
             align-items: flex-start;
-            padding: 26px 16px 28px;
+            padding: 22px 14px 22px;
+            overflow-y: auto;
+          }
+
+          .loading-content {
+            max-width: 100%;
           }
 
           .loading-badge {
             font-size: 12px;
-            padding: 7px 15px;
+            padding: 7px 14px;
+            margin-bottom: 14px;
+          }
+
+          .loading-progress-block {
+            margin-bottom: 14px;
           }
 
           .loading-quote-card {
-            min-height: 390px;
+            min-height: auto;
             border-radius: 22px;
+            padding: 22px 20px;
           }
 
           .loading-card-top {
-            flex-direction: column;
+            flex-direction: row;
             align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 18px;
+          }
+
+          .loading-card-top h1 {
+            font-size: clamp(24px, 7vw, 30px);
           }
 
           .loading-accent {
-            width: 50px;
-            height: 50px;
-            border-radius: 16px;
-            font-size: 24px;
+            width: 48px;
+            height: 48px;
+            border-radius: 15px;
+            font-size: 23px;
+          }
+
+          .loading-quote-body {
+            min-height: 210px;
           }
 
           .loading-quote-text {
-            text-align: left;
+            font-size: clamp(22px, 6vw, 26px);
+            line-height: 1.42;
+            margin-bottom: 22px;
+          }
+
+          .loading-note {
+            margin-top: 12px;
+            font-size: 12px;
           }
         }
 
         @media (max-width: 430px) {
+          .loading-main {
+            padding-left: 12px;
+            padding-right: 12px;
+          }
+
           .loading-progress-top {
             font-size: 11px;
           }
 
           .loading-quote-card {
-            padding: 22px 20px;
-            min-height: 370px;
+            padding: 20px 18px;
+            border-radius: 20px;
+          }
+
+          .loading-eyebrow {
+            font-size: 10px;
+            margin-bottom: 6px;
           }
 
           .loading-card-top h1 {
-            font-size: 27px;
+            font-size: 24px;
+          }
+
+          .loading-accent {
+            width: 44px;
+            height: 44px;
+            font-size: 21px;
+          }
+
+          .loading-quote-body {
+            min-height: 190px;
           }
 
           .loading-quote-text {
-            font-size: 23px;
+            font-size: 22px;
+            line-height: 1.38;
+          }
+
+          .loading-author-avatar {
+            width: 42px;
+            height: 42px;
+            font-size: 13px;
+          }
+
+          .loading-author p {
+            font-size: 14px;
+          }
+
+          .loading-author span {
+            font-size: 11px;
+          }
+
+          .loading-dots {
+            margin-top: 22px;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .loading-card-top {
+            flex-direction: column;
+          }
+
+          .loading-quote-body {
+            min-height: 210px;
+          }
+
+          .loading-quote-text {
+            font-size: 21px;
           }
         }
       `}</style>
