@@ -187,7 +187,9 @@ export default function LandingPage() {
   return (
     <div className="landing-page">
       <nav className={`landing-navbar ${scrolled ? "scrolled" : ""}`}>
-        <Logo />
+        <div className="landing-logo-wrap">
+          <Logo />
+        </div>
 
         <div className="landing-nav-actions">
           <button
@@ -348,24 +350,36 @@ export default function LandingPage() {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 18px;
-          padding: 16px clamp(20px, 4vw, 40px);
-          background: transparent;
+          gap: 14px;
+          padding: 14px clamp(18px, 4vw, 40px);
+          background: rgba(10, 31, 18, 0.72);
+          backdrop-filter: blur(10px);
+          border-bottom: 1px solid rgba(255,255,255,0.055);
           transition: all 0.3s ease;
         }
 
         .landing-navbar.scrolled {
-          background: rgba(10, 31, 18, 0.86);
-          backdrop-filter: blur(12px);
-          border-bottom: 1px solid rgba(255,255,255,0.06);
+          background: rgba(10, 31, 18, 0.9);
+          border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .landing-logo-wrap {
+          min-width: 0;
+          flex: 0 1 auto;
+          overflow: hidden;
+        }
+
+        .landing-logo-wrap :global(*) {
+          min-width: 0;
         }
 
         .landing-nav-actions {
           display: flex;
           align-items: center;
           justify-content: flex-end;
-          gap: 18px;
+          gap: 14px;
           min-width: 0;
+          flex: 0 0 auto;
         }
 
         .landing-nav-text {
@@ -378,10 +392,10 @@ export default function LandingPage() {
         .landing-ghost-button {
           background: transparent;
           border: none;
-          color: rgba(255,255,255,0.58);
+          color: rgba(255,255,255,0.68);
           font-family: 'DM Sans', sans-serif;
           font-size: 13px;
-          font-weight: 700;
+          font-weight: 800;
           cursor: pointer;
           white-space: nowrap;
           transition: color 0.2s;
@@ -392,7 +406,7 @@ export default function LandingPage() {
         }
 
         .landing-ghost-button.user-name {
-          max-width: 170px;
+          max-width: 150px;
           overflow: hidden;
           text-overflow: ellipsis;
         }
@@ -403,12 +417,12 @@ export default function LandingPage() {
           justify-content: center;
           border: none;
           border-radius: 10px;
-          padding: 9px 18px;
-          background: rgba(45, 140, 94, 0.9);
+          padding: 9px 17px;
+          background: rgba(45, 140, 94, 0.92);
           color: white;
           font-family: 'DM Sans', sans-serif;
           font-size: 13px;
-          font-weight: 800;
+          font-weight: 900;
           cursor: pointer;
           white-space: nowrap;
           transition: background 0.2s, transform 0.2s;
@@ -421,13 +435,13 @@ export default function LandingPage() {
 
         .landing-hero {
           position: relative;
-          min-height: 88vh;
+          min-height: calc(100vh - 74px);
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
           text-align: center;
-          padding: clamp(46px, 8vh, 74px) clamp(16px, 4vw, 24px) 44px;
+          padding: clamp(42px, 8vh, 74px) clamp(16px, 4vw, 24px) 44px;
           overflow: hidden;
         }
 
@@ -521,6 +535,7 @@ export default function LandingPage() {
           margin: 0 auto;
           backdrop-filter: blur(8px);
           box-shadow: 0 20px 70px rgba(0,0,0,0.16);
+          box-sizing: border-box;
         }
 
         .landing-chat-topbar {
@@ -745,25 +760,37 @@ export default function LandingPage() {
 
         @media (max-width: 820px) {
           .landing-navbar {
-            align-items: flex-start;
-            flex-direction: column;
+            flex-direction: row;
+            align-items: center;
+            padding: 12px 16px;
           }
 
           .landing-nav-actions {
-            width: 100%;
-            justify-content: flex-start;
-            flex-wrap: wrap;
-            gap: 12px;
+            gap: 8px;
           }
 
-          .landing-nav-cta,
+          .landing-nav-text {
+            display: none;
+          }
+
           .landing-ghost-button {
-            min-height: 38px;
+            font-size: 12px;
+            padding: 8px 8px;
+          }
+
+          .landing-nav-cta {
+            font-size: 12px;
+            padding: 8px 12px;
+            border-radius: 9px;
+          }
+
+          .landing-ghost-button.user-name {
+            max-width: 88px;
           }
 
           .landing-hero {
-            min-height: auto;
-            padding-top: 54px;
+            min-height: calc(100vh - 62px);
+            padding-top: 46px;
           }
 
           .landing-feature-grid {
@@ -777,28 +804,25 @@ export default function LandingPage() {
 
         @media (max-width: 520px) {
           .landing-navbar {
-            padding: 14px 18px;
+            gap: 8px;
           }
 
-          .landing-nav-actions {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-          }
-
-          .landing-nav-text,
-          .landing-ghost-button,
-          .landing-nav-cta {
-            width: 100%;
-            justify-content: center;
-            text-align: center;
+          .landing-logo-wrap {
+            transform: scale(0.92);
+            transform-origin: left center;
           }
 
           .landing-title {
-            font-size: 42px;
+            font-size: clamp(38px, 12vw, 46px);
           }
 
           .landing-subtitle br {
             display: none;
+          }
+
+          .landing-cta-wrap {
+            margin-top: 28px;
+            margin-bottom: 36px;
           }
 
           .landing-main-cta {
@@ -826,13 +850,17 @@ export default function LandingPage() {
           }
         }
 
-        @media (max-width: 380px) {
-          .landing-nav-actions {
-            grid-template-columns: 1fr;
+        @media (max-width: 390px) {
+          .landing-logo-wrap {
+            transform: scale(0.84);
           }
 
-          .landing-title {
-            font-size: 38px;
+          .landing-ghost-button {
+            display: none;
+          }
+
+          .landing-nav-cta {
+            padding: 8px 11px;
           }
         }
       `}</style>
