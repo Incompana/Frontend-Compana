@@ -166,12 +166,7 @@ const SkillItem = ({ skill, color, emptyColor = "rgba(255,255,255,0.42)" }) => (
 
     {(skill.priority || skill.nextTaskId) && (
       <div className="skill-mini-tags">
-        {skill.priority && (
-          <span style={{ color }}>
-            {skill.priority}
-          </span>
-        )}
-
+        {skill.priority && <span style={{ color }}>{skill.priority}</span>}
         {skill.nextTaskId && <span>Next: {skill.nextTaskId}</span>}
       </div>
     )}
@@ -184,9 +179,7 @@ const SkillItem = ({ skill, color, emptyColor = "rgba(255,255,255,0.42)" }) => (
   </div>
 );
 
-const EmptyState = ({ children }) => (
-  <p className="skill-empty">{children}</p>
-);
+const EmptyState = ({ children }) => <p className="skill-empty">{children}</p>;
 
 export default function SkillGapPage() {
   const navigate = useNavigate();
@@ -273,14 +266,17 @@ export default function SkillGapPage() {
             justify-content: center;
             font-family: 'DM Sans', sans-serif;
             padding: 24px;
+            box-sizing: border-box;
           }
 
           .skill-loader-card {
+            width: min(100%, 320px);
             text-align: center;
             background: rgba(255,255,255,0.06);
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 20px;
             padding: 26px 28px;
+            box-sizing: border-box;
           }
 
           .skill-loader-icon {
@@ -380,7 +376,11 @@ export default function SkillGapPage() {
               <span>🧠</span>
               <div>
                 <p className="skill-small-label">Ringkasan AI</p>
-                <h3>{totalGap > 0 ? `${totalGap} gap ditemukan` : "Belum ada gap utama"}</h3>
+                <h3>
+                  {totalGap > 0
+                    ? `${totalGap} gap ditemukan`
+                    : "Belum ada gap utama"}
+                </h3>
               </div>
             </div>
 
@@ -494,6 +494,10 @@ export default function SkillGapPage() {
       </main>
 
       <style>{`
+        * {
+          box-sizing: border-box;
+        }
+
         .skill-page {
           min-height: 100vh;
           min-height: 100svh;
@@ -505,14 +509,18 @@ export default function SkillGapPage() {
         }
 
         .skill-navbar {
+          width: 100%;
           display: grid;
           grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
           align-items: center;
           gap: 14px;
-          padding: 14px clamp(18px, 4vw, 40px);
+          padding: 14px clamp(16px, 4vw, 40px);
           border-bottom: 1px solid rgba(255,255,255,0.06);
-          position: relative;
-          z-index: 3;
+          position: sticky;
+          top: 0;
+          z-index: 10;
+          background: rgba(10,31,18,0.86);
+          backdrop-filter: blur(14px);
         }
 
         .skill-logo-wrap {
@@ -522,6 +530,7 @@ export default function SkillGapPage() {
 
         .skill-nav-pill {
           justify-self: center;
+          max-width: 100%;
           padding: 7px 17px;
           border-radius: 999px;
           border: 1.5px solid rgba(61,186,116,0.38);
@@ -554,8 +563,8 @@ export default function SkillGapPage() {
           position: relative;
           display: flex;
           justify-content: center;
-          padding: clamp(24px, 5vh, 42px) clamp(14px, 4vw, 24px) 54px;
-          overflow: hidden;
+          padding: clamp(22px, 5vh, 42px) clamp(14px, 4vw, 24px) 54px;
+          overflow: visible;
         }
 
         .skill-content {
@@ -570,6 +579,7 @@ export default function SkillGapPage() {
           text-align: center;
           max-width: 720px;
           margin: 0 auto 22px;
+          padding: 0 4px;
         }
 
         .skill-hero-badge {
@@ -594,13 +604,18 @@ export default function SkillGapPage() {
           border-radius: 50%;
           background: #3dba74;
           box-shadow: 0 0 9px rgba(61,186,116,0.7);
+          flex-shrink: 0;
         }
 
         .skill-hero-icon {
           width: 62px;
           height: 62px;
           border-radius: 22px;
-          background: linear-gradient(135deg, rgba(45,140,94,0.25), rgba(61,186,116,0.13));
+          background: linear-gradient(
+            135deg,
+            rgba(45,140,94,0.25),
+            rgba(61,186,116,0.13)
+          );
           border: 1px solid rgba(61,186,116,0.32);
           display: flex;
           align-items: center;
@@ -613,7 +628,7 @@ export default function SkillGapPage() {
         .skill-hero h1 {
           font-family: 'Playfair Display', serif;
           font-weight: 900;
-          font-size: clamp(32px, 5vw, 46px);
+          font-size: clamp(30px, 8vw, 46px);
           line-height: 1.08;
           margin: 0 0 12px;
           letter-spacing: -0.5px;
@@ -643,6 +658,7 @@ export default function SkillGapPage() {
         .skill-summary-card,
         .skill-section-card,
         .skill-cta-card {
+          width: 100%;
           border: 1px solid rgba(255,255,255,0.1);
           background: rgba(255,255,255,0.06);
           border-radius: 24px;
@@ -652,9 +668,9 @@ export default function SkillGapPage() {
 
         .skill-overview-card {
           display: grid;
-          grid-template-columns: minmax(0, 1fr) minmax(280px, 0.85fr);
+          grid-template-columns: minmax(0, 1fr) minmax(260px, 0.85fr);
           gap: 18px;
-          padding: clamp(20px, 4vw, 28px);
+          padding: clamp(18px, 4vw, 28px);
           margin-bottom: 14px;
           background:
             radial-gradient(circle at top left, rgba(61,186,116,0.16), transparent 34%),
@@ -673,10 +689,11 @@ export default function SkillGapPage() {
 
         .skill-overview-copy h2 {
           font-family: 'Playfair Display', serif;
-          font-size: clamp(28px, 5vw, 42px);
+          font-size: clamp(26px, 6vw, 42px);
           line-height: 1.1;
           margin: 0;
           color: white;
+          word-break: break-word;
         }
 
         .skill-pill-row {
@@ -696,6 +713,7 @@ export default function SkillGapPage() {
           font-size: 12px;
           color: rgba(255,255,255,0.84);
           font-weight: 800;
+          line-height: 1.3;
         }
 
         .skill-score-grid {
@@ -848,6 +866,7 @@ export default function SkillGapPage() {
           background: rgba(255,255,255,0.045);
           border: 1px solid rgba(255,255,255,0.08);
           padding: 14px;
+          min-width: 0;
         }
 
         .skill-item-top {
@@ -863,6 +882,7 @@ export default function SkillGapPage() {
         .skill-item-top span {
           color: rgba(255,255,255,0.84);
           line-height: 1.45;
+          word-break: break-word;
         }
 
         .skill-item-top strong {
@@ -926,6 +946,7 @@ export default function SkillGapPage() {
           font-size: 12px;
           color: rgba(255,255,255,0.86);
           font-weight: 800;
+          line-height: 1.3;
         }
 
         .skill-cta-card {
@@ -975,7 +996,7 @@ export default function SkillGapPage() {
           }
         }
 
-        @media (max-width: 860px) {
+        @media (max-width: 900px) {
           .skill-overview-card,
           .skill-grid,
           .skill-cta-card {
@@ -984,17 +1005,18 @@ export default function SkillGapPage() {
 
           .skill-cta-card button {
             width: 100%;
+            white-space: normal;
           }
         }
 
-        @media (max-width: 560px) {
+        @media (max-width: 640px) {
           .skill-navbar {
-            grid-template-columns: 1fr auto;
-            padding: 12px 16px;
+            grid-template-columns: minmax(0, 1fr) auto;
+            padding: 12px 14px;
           }
 
           .skill-logo-wrap {
-            transform: scale(0.92);
+            transform: scale(0.9);
             transform-origin: left center;
           }
 
@@ -1007,8 +1029,7 @@ export default function SkillGapPage() {
           }
 
           .skill-main {
-            padding: 24px 12px 38px;
-            overflow-y: auto;
+            padding: 22px 12px 36px;
           }
 
           .skill-hero {
@@ -1022,18 +1043,10 @@ export default function SkillGapPage() {
           }
 
           .skill-hero-icon {
-            width: 56px;
-            height: 56px;
+            width: 54px;
+            height: 54px;
             border-radius: 18px;
-            font-size: 25px;
-          }
-
-          .skill-hero h1 {
-            font-size: 34px;
-          }
-
-          .skill-hero p {
-            font-size: 13px;
+            font-size: 24px;
           }
 
           .skill-overview-card,
@@ -1053,6 +1066,7 @@ export default function SkillGapPage() {
             align-items: center;
             text-align: left;
             gap: 12px;
+            padding: 13px;
           }
 
           .skill-score-card > span {
@@ -1061,6 +1075,11 @@ export default function SkillGapPage() {
 
           .skill-score-card p {
             font-size: 24px;
+          }
+
+          .skill-card-heading,
+          .skill-section-head {
+            gap: 10px;
           }
 
           .skill-card-heading > span,
@@ -1081,15 +1100,40 @@ export default function SkillGapPage() {
           .skill-summary-tags span {
             font-size: 11px;
           }
+
+          .skill-item-top {
+            font-size: 12px;
+          }
         }
 
-        @media (max-width: 360px) {
+        @media (max-width: 380px) {
+          .skill-main {
+            padding-left: 10px;
+            padding-right: 10px;
+          }
+
           .skill-hero h1 {
-            font-size: 31px;
+            font-size: 30px;
           }
 
           .skill-overview-copy h2 {
-            font-size: 28px;
+            font-size: 26px;
+          }
+
+          .skill-pill-row span,
+          .skill-summary-tags span,
+          .owned-list span {
+            width: 100%;
+            text-align: center;
+          }
+
+          .skill-score-card {
+            grid-template-columns: auto 1fr;
+          }
+
+          .skill-score-card small {
+            grid-column: 1 / -1;
+            padding-left: 44px;
           }
         }
       `}</style>
