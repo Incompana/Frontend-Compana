@@ -1,9 +1,32 @@
 // src/pages/user/SkillGapPage.jsx
+
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Logo, StarField } from "../../components/Shared";
 import api from "../../api/axios";
 import toast from "react-hot-toast";
+
+const ProgressBar = ({ pct, color }) => (
+  <div
+    style={{
+      flex: 1,
+      height: "4px",
+      borderRadius: "999px",
+      background: "rgba(255,255,255,0.08)",
+      overflow: "hidden",
+    }}
+  >
+    <div
+      style={{
+        height: "100%",
+        width: `${Math.min(Math.max(pct || 0, 0), 100)}%`,
+        borderRadius: "999px",
+        background: color,
+        transition: "width 0.8s ease",
+      }}
+    />
+  </div>
+);
 
 const parseLocalAssessmentResult = () => {
   try {
@@ -141,53 +164,6 @@ const normalizeSkillGapData = (apiData, localData) => {
   };
 };
 
-const clampPercent = (value) => Math.min(Math.max(Number(value) || 0, 0), 100);
-
-const ProgressBar = ({ pct, color }) => (
-  <div className="skill-progress-track">
-    <div
-      className="skill-progress-fill"
-      style={{
-        width: `${clampPercent(pct)}%`,
-        background: color,
-      }}
-    />
-  </div>
-);
-
-const SkillItem = ({ skill, color, emptyColor = "rgba(255,255,255,0.42)" }) => (
-  <div className="skill-item">
-    <div className="skill-item-top">
-      <span>{skill.name}</span>
-      <strong style={{ color }}>{clampPercent(skill.pct)}%</strong>
-    </div>
-
-    <ProgressBar pct={skill.pct} color={color} />
-
-    {(skill.priority || skill.nextTaskId) && (
-      <div className="skill-mini-tags">
-        {skill.priority && (
-          <span style={{ color }}>
-            {skill.priority}
-          </span>
-        )}
-
-        {skill.nextTaskId && <span>Next: {skill.nextTaskId}</span>}
-      </div>
-    )}
-
-    {skill.reason && (
-      <p className="skill-reason" style={{ color: emptyColor }}>
-        {skill.reason}
-      </p>
-    )}
-  </div>
-);
-
-const EmptyState = ({ children }) => (
-  <p className="skill-empty">{children}</p>
-);
-
 export default function SkillGapPage() {
   const navigate = useNavigate();
 
@@ -242,12 +218,12 @@ export default function SkillGapPage() {
     ownedSkills,
   } = normalized;
 
-  const totalGap = missingSkills.length + weakSkills.length;
-  const readiness = clampPercent(readinessScore);
-  const confidence = clampPercent(confidenceScore);
-
   const handleCreateLearningPath = () => {
     navigate("/action-plan");
+  };
+
+  const handleExportPDF = () => {
+    toast("Fitur export PDF akan dibuat nanti.");
   };
 
   const handleBack = () => {
@@ -256,715 +232,649 @@ export default function SkillGapPage() {
 
   if (loading) {
     return (
-      <div className="skill-loading">
-        <div className="skill-loader-card">
-          <div className="skill-loader-icon">🔍</div>
-          <p>Memuat skill gap...</p>
-        </div>
-
-        <style>{`
-          .skill-loading {
-            min-height: 100vh;
-            min-height: 100svh;
-            background: #0a1f12;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'DM Sans', sans-serif;
-            padding: 24px;
-          }
-
-          .skill-loader-card {
-            text-align: center;
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 20px;
-            padding: 26px 28px;
-          }
-
-          .skill-loader-icon {
-            width: 54px;
-            height: 54px;
-            border-radius: 50%;
-            background: rgba(61,186,116,0.14);
-            border: 1px solid rgba(61,186,116,0.28);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 14px;
-            font-size: 24px;
-          }
-
-          .skill-loader-card p {
-            margin: 0;
-            color: rgba(255,255,255,0.72);
-          }
-        `}</style>
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "#0a1f12",
+          color: "white",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontFamily: "'DM Sans', sans-serif",
+        }}
+      >
+        Memuat skill gap...
       </div>
     );
   }
 
   return (
-    <div className="skill-page">
-      <nav className="skill-navbar">
-        <div className="skill-logo-wrap">
-          <Logo />
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#0a1f12",
+        color: "white",
+        display: "flex",
+        flexDirection: "column",
+        overflowX: "hidden",
+      }}
+    >
+      <nav
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "14px 40px",
+        }}
+      >
+        <Logo />
+
+        <div
+          style={{
+            padding: "6px 20px",
+            borderRadius: "999px",
+            border: "1.5px solid rgba(255,255,255,0.2)",
+            background: "rgba(255,255,255,0.07)",
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: "13px",
+            color: "rgba(255,255,255,0.8)",
+            fontWeight: 500,
+          }}
+        >
+          Gap Skill Analysis
         </div>
 
-        <div className="skill-nav-pill">Skill Gap Analysis</div>
-
-        <button type="button" onClick={handleBack} className="skill-nav-back">
+        <button
+          onClick={handleBack}
+          style={{
+            background: "transparent",
+            border: "none",
+            color: "rgba(255,255,255,0.55)",
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: "13px",
+            cursor: "pointer",
+          }}
+        >
           Kembali
         </button>
       </nav>
 
-      <main className="skill-main">
+      <div
+        style={{
+          position: "relative",
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          padding: "0 24px 48px",
+        }}
+      >
         <div className="mesh-bg" />
         <StarField />
 
-        <section className="skill-content">
-          <header className="skill-hero">
-            <div className="skill-hero-badge">
-              <span />
-              AI Gap Mapping
+        <div
+          style={{
+            position: "relative",
+            zIndex: 1,
+            width: "100%",
+            maxWidth: "720px",
+            animation: "slideUp 0.6s ease both",
+          }}
+        >
+          <div style={{ textAlign: "center", marginBottom: "28px" }}>
+            <div
+              style={{
+                width: "56px",
+                height: "56px",
+                borderRadius: "50%",
+                background: "rgba(45,140,94,0.2)",
+                border: "1.5px solid rgba(61,186,116,0.35)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "24px",
+                margin: "0 auto 14px",
+              }}
+            >
+              🔍
             </div>
 
-            <div className="skill-hero-icon">🔍</div>
-
-            <h1>
-              Skill Gap <span>Kamu</span>
+            <h1
+              style={{
+                fontFamily: "'Playfair Display', serif",
+                fontWeight: 700,
+                fontSize: "clamp(24px, 4vw, 32px)",
+                margin: "0 0 10px",
+              }}
+            >
+              <span
+                style={{
+                  color: "white",
+                  textDecoration: "underline",
+                  textDecorationColor: "rgba(255,255,255,0.2)",
+                  textUnderlineOffset: "4px",
+                }}
+              >
+                Skill Gap
+              </span>{" "}
+              <span style={{ color: "#3dba74" }}>Kamu</span>
             </h1>
 
-            <p>
-              Ini adalah peta kemampuan yang perlu kamu perkuat untuk menuju{" "}
-              <strong>{targetRole}</strong>.
+            <p
+              style={{
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: "13px",
+                color: "rgba(255,255,255,0.5)",
+                lineHeight: 1.7,
+                margin: 0,
+              }}
+            >
+              Ini adalah skill yang perlu diperkuat untuk menjadi{" "}
+              <span style={{ color: "#3dba74", fontWeight: 600 }}>
+                {targetRole}
+              </span>
+              .
             </p>
-          </header>
 
-          <section className="skill-overview-card">
-            <div className="skill-overview-copy">
-              <p className="skill-small-label">Target Role</p>
-              <h2>{targetRole}</h2>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                gap: "10px",
+                flexWrap: "wrap",
+                marginTop: "10px",
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: "12px",
+                  color: "rgba(255,255,255,0.45)",
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: "999px",
+                  padding: "5px 12px",
+                }}
+              >
+                Confidence: {confidenceScore}%
+              </span>
 
-              <div className="skill-pill-row">
-                <span>Confidence {confidence}%</span>
-                <span>Readiness {readiness}%</span>
-                <span>{problemCategory}</span>
-              </div>
+              <span
+                style={{
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: "12px",
+                  color: "rgba(255,255,255,0.45)",
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: "999px",
+                  padding: "5px 12px",
+                }}
+              >
+                Readiness: {readinessScore}%
+              </span>
             </div>
+          </div>
 
-            <div className="skill-score-grid">
-              <div className="skill-score-card danger">
-                <span>✕</span>
-                <p>{missingSkills.length}</p>
-                <small>Missing</small>
-              </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr 1fr",
+              gap: "12px",
+              marginBottom: "16px",
+            }}
+          >
+            {[
+              {
+                icon: "✕",
+                label: "MISSING",
+                count: missingSkills.length,
+                color: "#e05a5a",
+              },
+              {
+                icon: "=",
+                label: "WEAK",
+                count: weakSkills.length,
+                color: "#d4a844",
+              },
+              {
+                icon: "✓",
+                label: "OWNED",
+                count: ownedSkills.length,
+                color: "#3dba74",
+              },
+            ].map((item) => (
+              <div
+                key={item.label}
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: "12px",
+                  padding: "14px 18px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                }}
+              >
+                <div
+                  style={{
+                    width: "28px",
+                    height: "28px",
+                    borderRadius: "50%",
+                    background: item.color,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "white",
+                    fontWeight: 700,
+                  }}
+                >
+                  {item.icon}
+                </div>
 
-              <div className="skill-score-card warning">
-                <span>=</span>
-                <p>{weakSkills.length}</p>
-                <small>Weak</small>
-              </div>
-
-              <div className="skill-score-card success">
-                <span>✓</span>
-                <p>{ownedSkills.length}</p>
-                <small>Owned</small>
-              </div>
-            </div>
-          </section>
-
-          <article className="skill-summary-card">
-            <div className="skill-card-heading">
-              <span>🧠</span>
-              <div>
-                <p className="skill-small-label">Ringkasan AI</p>
-                <h3>{totalGap > 0 ? `${totalGap} gap ditemukan` : "Belum ada gap utama"}</h3>
-              </div>
-            </div>
-
-            <div className="skill-summary-tags">
-              <span>Problem: {problemCategory}</span>
-              {blockerType && <span>Blocker: {blockerType}</span>}
-              {priorityGap && <span>Prioritas: {priorityGap}</span>}
-            </div>
-
-            {summary ? (
-              <p>{summary}</p>
-            ) : (
-              <p>
-                AI akan memperbarui ringkasan ini setelah data assessment dan
-                task kamu semakin lengkap.
-              </p>
-            )}
-          </article>
-
-          <div className="skill-grid">
-            <article className="skill-section-card danger">
-              <div className="skill-section-head">
-                <span>✕</span>
                 <div>
-                  <p className="skill-small-label">Missing Skills</p>
-                  <h3>Skill yang perlu kamu mulai</h3>
+                  <p
+                    style={{
+                      fontSize: "10px",
+                      opacity: 0.5,
+                      margin: 0,
+                    }}
+                  >
+                    {item.label}
+                  </p>
+
+                  <p
+                    style={{
+                      margin: 0,
+                      color: item.color,
+                      fontSize: "22px",
+                      fontFamily: "'Playfair Display', serif",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {item.count}
+                  </p>
                 </div>
               </div>
+            ))}
+          </div>
+
+          <div
+            style={{
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: "14px",
+              padding: "16px 18px",
+              marginBottom: "12px",
+            }}
+          >
+            <p
+              style={{
+                color: "#3dba74",
+                margin: "0 0 8px",
+                fontWeight: 700,
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: "13px",
+              }}
+            >
+              Ringkasan AI
+            </p>
+
+            <p
+              style={{
+                margin: 0,
+                color: "rgba(255,255,255,0.58)",
+                fontSize: "13px",
+                lineHeight: 1.7,
+              }}
+            >
+              Problem Category:{" "}
+              <span style={{ color: "rgba(255,255,255,0.82)" }}>
+                {problemCategory}
+              </span>
+              {blockerType ? (
+                <>
+                  {" "}
+                  · Blocker:{" "}
+                  <span style={{ color: "rgba(255,255,255,0.82)" }}>
+                    {blockerType}
+                  </span>
+                </>
+              ) : null}
+              {priorityGap ? (
+                <>
+                  {" "}
+                  · Prioritas:{" "}
+                  <span style={{ color: "#3dba74" }}>
+                    {priorityGap}
+                  </span>
+                </>
+              ) : null}
+            </p>
+
+            {summary && (
+              <p
+                style={{
+                  margin: "8px 0 0",
+                  color: "rgba(255,255,255,0.42)",
+                  fontSize: "12px",
+                  lineHeight: 1.6,
+                }}
+              >
+                {summary}
+              </p>
+            )}
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "12px",
+              marginBottom: "12px",
+            }}
+          >
+            <div
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: "14px",
+                padding: "16px 18px",
+              }}
+            >
+              <p
+                style={{
+                  color: "#e05a5a",
+                  margin: "0 0 10px",
+                  fontWeight: 700,
+                }}
+              >
+                Missing Skills
+              </p>
 
               {missingSkills.length > 0 ? (
-                <div className="skill-list">
-                  {missingSkills.map((skill) => (
-                    <SkillItem
-                      key={skill.name}
-                      skill={skill}
-                      color="#e05a5a"
-                    />
-                  ))}
-                </div>
-              ) : (
-                <EmptyState>Tidak ada missing skill dari hasil AI.</EmptyState>
-              )}
-            </article>
+                missingSkills.map((skill) => (
+                  <div key={skill.name} style={{ marginBottom: "14px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: "10px",
+                        fontSize: "13px",
+                        marginBottom: "6px",
+                      }}
+                    >
+                      <span>{skill.name}</span>
+                      <span>{skill.pct}%</span>
+                    </div>
 
-            <article className="skill-section-card warning">
-              <div className="skill-section-head">
-                <span>=</span>
-                <div>
-                  <p className="skill-small-label">Weak Skills</p>
-                  <h3>Skill yang perlu diperkuat</h3>
-                </div>
-              </div>
+                    <ProgressBar pct={skill.pct} color="#e05a5a" />
+
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "6px",
+                        flexWrap: "wrap",
+                        marginTop: "7px",
+                      }}
+                    >
+                      {skill.priority && (
+                        <span
+                          style={{
+                            fontSize: "10px",
+                            color: "#e05a5a",
+                            background: "rgba(224,90,90,0.12)",
+                            border: "1px solid rgba(224,90,90,0.25)",
+                            padding: "3px 8px",
+                            borderRadius: "999px",
+                          }}
+                        >
+                          {skill.priority}
+                        </span>
+                      )}
+
+                      {skill.nextTaskId && (
+                        <span
+                          style={{
+                            fontSize: "10px",
+                            color: "rgba(255,255,255,0.55)",
+                            background: "rgba(255,255,255,0.07)",
+                            border: "1px solid rgba(255,255,255,0.12)",
+                            padding: "3px 8px",
+                            borderRadius: "999px",
+                          }}
+                        >
+                          Next: {skill.nextTaskId}
+                        </span>
+                      )}
+                    </div>
+
+                    {skill.reason && (
+                      <p
+                        style={{
+                          margin: "7px 0 0",
+                          fontSize: "11px",
+                          lineHeight: 1.5,
+                          color: "rgba(255,255,255,0.38)",
+                        }}
+                      >
+                        {skill.reason}
+                      </p>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p
+                  style={{
+                    fontSize: "12px",
+                    color: "rgba(255,255,255,0.45)",
+                    lineHeight: 1.6,
+                  }}
+                >
+                  Tidak ada missing skill dari hasil AI.
+                </p>
+              )}
+            </div>
+
+            <div
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: "14px",
+                padding: "16px 18px",
+              }}
+            >
+              <p
+                style={{
+                  color: "#d4a844",
+                  margin: "0 0 10px",
+                  fontWeight: 700,
+                }}
+              >
+                Weak Skills
+              </p>
 
               {weakSkills.length > 0 ? (
-                <div className="skill-list">
-                  {weakSkills.map((skill) => (
-                    <SkillItem
-                      key={skill.name}
-                      skill={skill}
-                      color="#d4a844"
-                    />
-                  ))}
-                </div>
+                weakSkills.map((skill) => (
+                  <div key={skill.name} style={{ marginBottom: "14px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: "10px",
+                        fontSize: "13px",
+                        marginBottom: "6px",
+                      }}
+                    >
+                      <span>{skill.name}</span>
+                      <span>{skill.pct}%</span>
+                    </div>
+
+                    <ProgressBar pct={skill.pct} color="#d4a844" />
+
+                    {skill.reason && (
+                      <p
+                        style={{
+                          margin: "7px 0 0",
+                          fontSize: "11px",
+                          lineHeight: 1.5,
+                          color: "rgba(255,255,255,0.38)",
+                        }}
+                      >
+                        {skill.reason}
+                      </p>
+                    )}
+                  </div>
+                ))
               ) : (
-                <EmptyState>
-                  Belum ada weak skill dari hasil AI. Untuk assessment awal, AI
-                  biasanya menandai skill sebagai missing sampai task pertama
+                <p
+                  style={{
+                    fontSize: "12px",
+                    color: "rgba(255,255,255,0.45)",
+                    lineHeight: 1.6,
+                  }}
+                >
+                  Belum ada weak skill dari hasil AI. Untuk assessment awal,
+                  AI menandai skill sebagai missing sampai task pertama
                   berhasil divalidasi.
-                </EmptyState>
+                </p>
               )}
-            </article>
+            </div>
           </div>
 
-          <article className="skill-section-card success owned-card">
-            <div className="skill-section-head">
-              <span>✓</span>
-              <div>
-                <p className="skill-small-label">Owned Skills</p>
-                <h3>Skill yang sudah tervalidasi</h3>
-              </div>
-            </div>
+          <div
+            style={{
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(61,186,116,0.2)",
+              borderRadius: "14px",
+              padding: "16px 18px",
+              marginBottom: "24px",
+            }}
+          >
+            <p
+              style={{
+                color: "#3dba74",
+                margin: "0 0 10px",
+                fontWeight: 700,
+              }}
+            >
+              Skill yang Sudah Kamu Miliki
+            </p>
 
             {ownedSkills.length > 0 ? (
-              <div className="owned-list">
-                {ownedSkills.map((skill) => (
-                  <span key={skill.name}>✓ {skill.name}</span>
-                ))}
-              </div>
+              ownedSkills.map((skill) => (
+                <div
+                  key={skill.name}
+                  style={{
+                    fontSize: "13px",
+                    color: "rgba(255,255,255,0.75)",
+                    marginBottom: "8px",
+                  }}
+                >
+                  ✓ {skill.name}
+                </div>
+              ))
             ) : (
-              <EmptyState>
+              <p
+                style={{
+                  fontSize: "12px",
+                  color: "rgba(255,255,255,0.45)",
+                  lineHeight: 1.6,
+                  margin: 0,
+                }}
+              >
                 Belum ada owned skill yang tervalidasi. Skill akan masuk ke
                 bagian ini setelah task dinilai passed oleh AI.
-              </EmptyState>
-            )}
-          </article>
-
-          <div className="skill-cta-card">
-            <div>
-              <h3>Siap lanjut ke learning path?</h3>
-              <p>
-                Setelah tahu gap-mu, lanjutkan ke action plan agar task belajarmu
-                tersusun lebih jelas.
               </p>
-            </div>
+            )}
+          </div>
 
-            <button type="button" onClick={handleCreateLearningPath}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr auto",
+              gap: "12px",
+            }}
+          >
+            <button
+              onClick={handleCreateLearningPath}
+              style={{
+                padding: "14px 16px",
+                borderRadius: "12px",
+                border: "1px solid rgba(61,186,116,0.25)",
+                background:
+                  "linear-gradient(135deg, rgba(61,186,116,0.25), rgba(61,186,116,0.08))",
+                color: "#3dba74",
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: "14px",
+                fontWeight: 600,
+                cursor: "pointer",
+                transition: "all 0.25s ease",
+                letterSpacing: "0.2px",
+                textDecoration: "underline",
+                textDecorationColor: "rgba(61,186,116,0.25)",
+                textUnderlineOffset: "3px",
+                boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.background =
+                  "linear-gradient(135deg, rgba(61,186,116,0.35), rgba(61,186,116,0.12))";
+                e.currentTarget.style.boxShadow =
+                  "0 12px 30px rgba(0,0,0,0.25)";
+                e.currentTarget.style.color = "white";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.background =
+                  "linear-gradient(135deg, rgba(61,186,116,0.25), rgba(61,186,116,0.08))";
+                e.currentTarget.style.boxShadow =
+                  "0 8px 20px rgba(0,0,0,0.15)";
+                e.currentTarget.style.color = "#3dba74";
+              }}
+            >
               Buka Learning Path →
             </button>
+
+            <button
+              onClick={handleExportPDF}
+              style={{
+                padding: "14px 22px",
+                borderRadius: "12px",
+                border: "1px solid rgba(255,255,255,0.15)",
+                background: "rgba(255,255,255,0.05)",
+                color: "rgba(255,255,255,0.75)",
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: "14px",
+                fontWeight: 500,
+                cursor: "pointer",
+                transition: "all 0.25s ease",
+                letterSpacing: "0.2px",
+                backdropFilter: "blur(8px)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background =
+                  "rgba(255,255,255,0.12)";
+                e.currentTarget.style.color = "white";
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow =
+                  "0 10px 25px rgba(0,0,0,0.2)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background =
+                  "rgba(255,255,255,0.05)";
+                e.currentTarget.style.color = "rgba(255,255,255,0.75)";
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "none";
+              }}
+            >
+              Export PDF
+            </button>
           </div>
-        </section>
-      </main>
+        </div>
+      </div>
 
       <style>{`
-        .skill-page {
-          min-height: 100vh;
-          min-height: 100svh;
-          background: #0a1f12;
-          color: white;
-          display: flex;
-          flex-direction: column;
-          overflow-x: hidden;
-        }
-
-        .skill-navbar {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-          align-items: center;
-          gap: 14px;
-          padding: 14px clamp(18px, 4vw, 40px);
-          border-bottom: 1px solid rgba(255,255,255,0.06);
-          position: relative;
-          z-index: 3;
-        }
-
-        .skill-logo-wrap {
-          min-width: 0;
-          overflow: hidden;
-        }
-
-        .skill-nav-pill {
-          justify-self: center;
-          padding: 7px 17px;
-          border-radius: 999px;
-          border: 1.5px solid rgba(61,186,116,0.38);
-          background: rgba(61,186,116,0.08);
-          font-family: 'DM Sans', sans-serif;
-          font-size: 12px;
-          color: rgba(255,255,255,0.82);
-          font-weight: 900;
-          white-space: nowrap;
-        }
-
-        .skill-nav-back {
-          justify-self: end;
-          background: transparent;
-          border: none;
-          color: rgba(255,255,255,0.62);
-          font-family: 'DM Sans', sans-serif;
-          font-size: 13px;
-          font-weight: 800;
-          cursor: pointer;
-          white-space: nowrap;
-        }
-
-        .skill-nav-back:hover {
-          color: white;
-        }
-
-        .skill-main {
-          flex: 1;
-          position: relative;
-          display: flex;
-          justify-content: center;
-          padding: clamp(24px, 5vh, 42px) clamp(14px, 4vw, 24px) 54px;
-          overflow: hidden;
-        }
-
-        .skill-content {
-          position: relative;
-          z-index: 1;
-          width: 100%;
-          max-width: 980px;
-          animation: skillSlideUp 0.55s ease both;
-        }
-
-        .skill-hero {
-          text-align: center;
-          max-width: 720px;
-          margin: 0 auto 22px;
-        }
-
-        .skill-hero-badge {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          padding: 7px 16px;
-          border-radius: 999px;
-          border: 1px solid rgba(61,186,116,0.3);
-          background: rgba(61,186,116,0.08);
-          color: rgba(255,255,255,0.76);
-          font-family: 'DM Sans', sans-serif;
-          font-size: 12px;
-          font-weight: 900;
-          margin-bottom: 16px;
-        }
-
-        .skill-hero-badge span {
-          width: 7px;
-          height: 7px;
-          border-radius: 50%;
-          background: #3dba74;
-          box-shadow: 0 0 9px rgba(61,186,116,0.7);
-        }
-
-        .skill-hero-icon {
-          width: 62px;
-          height: 62px;
-          border-radius: 22px;
-          background: linear-gradient(135deg, rgba(45,140,94,0.25), rgba(61,186,116,0.13));
-          border: 1px solid rgba(61,186,116,0.32);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 27px;
-          margin: 0 auto 16px;
-          box-shadow: 0 18px 44px rgba(0,0,0,0.18);
-        }
-
-        .skill-hero h1 {
-          font-family: 'Playfair Display', serif;
-          font-weight: 900;
-          font-size: clamp(32px, 5vw, 46px);
-          line-height: 1.08;
-          margin: 0 0 12px;
-          letter-spacing: -0.5px;
-        }
-
-        .skill-hero h1 span {
-          color: #3dba74;
-          text-decoration: underline;
-          text-decoration-color: rgba(61,186,116,0.38);
-          text-underline-offset: 6px;
-        }
-
-        .skill-hero p {
-          font-family: 'DM Sans', sans-serif;
-          font-size: clamp(13px, 2vw, 15px);
-          color: rgba(255,255,255,0.58);
-          line-height: 1.75;
-          margin: 0 auto;
-          max-width: 640px;
-        }
-
-        .skill-hero p strong {
-          color: #3dba74;
-        }
-
-        .skill-overview-card,
-        .skill-summary-card,
-        .skill-section-card,
-        .skill-cta-card {
-          border: 1px solid rgba(255,255,255,0.1);
-          background: rgba(255,255,255,0.06);
-          border-radius: 24px;
-          backdrop-filter: blur(10px);
-          box-shadow: 0 22px 76px rgba(0,0,0,0.18);
-        }
-
-        .skill-overview-card {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) minmax(280px, 0.85fr);
-          gap: 18px;
-          padding: clamp(20px, 4vw, 28px);
-          margin-bottom: 14px;
-          background:
-            radial-gradient(circle at top left, rgba(61,186,116,0.16), transparent 34%),
-            rgba(255,255,255,0.065);
-        }
-
-        .skill-small-label {
-          font-family: 'DM Sans', sans-serif;
-          font-size: 11px;
-          text-transform: uppercase;
-          letter-spacing: 0.09em;
-          color: rgba(126,240,170,0.72);
-          font-weight: 900;
-          margin: 0 0 8px;
-        }
-
-        .skill-overview-copy h2 {
-          font-family: 'Playfair Display', serif;
-          font-size: clamp(28px, 5vw, 42px);
-          line-height: 1.1;
-          margin: 0;
-          color: white;
-        }
-
-        .skill-pill-row {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-          margin-top: 16px;
-        }
-
-        .skill-pill-row span,
-        .skill-summary-tags span {
-          padding: 8px 12px;
-          border-radius: 999px;
-          background: rgba(61,186,116,0.13);
-          border: 1px solid rgba(61,186,116,0.22);
-          font-family: 'DM Sans', sans-serif;
-          font-size: 12px;
-          color: rgba(255,255,255,0.84);
-          font-weight: 800;
-        }
-
-        .skill-score-grid {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 10px;
-        }
-
-        .skill-score-card {
-          min-width: 0;
-          border-radius: 18px;
-          padding: 15px;
-          background: rgba(255,255,255,0.055);
-          border: 1px solid rgba(255,255,255,0.09);
-          text-align: center;
-        }
-
-        .skill-score-card > span {
-          width: 32px;
-          height: 32px;
-          border-radius: 50%;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-weight: 900;
-          margin-bottom: 8px;
-        }
-
-        .skill-score-card.danger > span {
-          background: #e05a5a;
-        }
-
-        .skill-score-card.warning > span {
-          background: #d4a844;
-        }
-
-        .skill-score-card.success > span {
-          background: #3dba74;
-        }
-
-        .skill-score-card p {
-          font-family: 'Playfair Display', serif;
-          font-size: 28px;
-          font-weight: 900;
-          margin: 0;
-          color: white;
-        }
-
-        .skill-score-card small {
-          font-family: 'DM Sans', sans-serif;
-          font-size: 11px;
-          color: rgba(255,255,255,0.5);
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-          font-weight: 900;
-        }
-
-        .skill-summary-card,
-        .skill-section-card {
-          padding: clamp(18px, 3vw, 22px);
-        }
-
-        .skill-summary-card {
-          margin-bottom: 14px;
-        }
-
-        .skill-card-heading,
-        .skill-section-head {
-          display: flex;
-          align-items: flex-start;
-          gap: 12px;
-          margin-bottom: 14px;
-        }
-
-        .skill-card-heading > span,
-        .skill-section-head > span {
-          width: 42px;
-          height: 42px;
-          border-radius: 14px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: rgba(61,186,116,0.12);
-          border: 1px solid rgba(61,186,116,0.18);
-          font-size: 20px;
-          flex-shrink: 0;
-        }
-
-        .skill-section-card.danger .skill-section-head > span {
-          background: rgba(224,90,90,0.12);
-          border-color: rgba(224,90,90,0.2);
-          color: #e05a5a;
-        }
-
-        .skill-section-card.warning .skill-section-head > span {
-          background: rgba(212,168,68,0.12);
-          border-color: rgba(212,168,68,0.22);
-          color: #d4a844;
-        }
-
-        .skill-section-card.success .skill-section-head > span {
-          background: rgba(61,186,116,0.12);
-          border-color: rgba(61,186,116,0.2);
-          color: #3dba74;
-        }
-
-        .skill-card-heading h3,
-        .skill-section-head h3,
-        .skill-cta-card h3 {
-          margin: 0;
-          font-family: 'DM Sans', sans-serif;
-          font-size: 18px;
-          line-height: 1.35;
-          color: white;
-        }
-
-        .skill-summary-card > p,
-        .skill-empty,
-        .skill-cta-card p {
-          font-family: 'DM Sans', sans-serif;
-          margin: 0;
-          color: rgba(255,255,255,0.62);
-          font-size: 13px;
-          line-height: 1.75;
-        }
-
-        .skill-summary-tags {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-          margin: 0 0 12px;
-        }
-
-        .skill-grid {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 14px;
-          margin-bottom: 14px;
-        }
-
-        .skill-list {
-          display: flex;
-          flex-direction: column;
-          gap: 14px;
-        }
-
-        .skill-item {
-          border-radius: 16px;
-          background: rgba(255,255,255,0.045);
-          border: 1px solid rgba(255,255,255,0.08);
-          padding: 14px;
-        }
-
-        .skill-item-top {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          gap: 12px;
-          font-family: 'DM Sans', sans-serif;
-          font-size: 13px;
-          margin-bottom: 8px;
-        }
-
-        .skill-item-top span {
-          color: rgba(255,255,255,0.84);
-          line-height: 1.45;
-        }
-
-        .skill-item-top strong {
-          flex-shrink: 0;
-        }
-
-        .skill-progress-track {
-          height: 5px;
-          border-radius: 999px;
-          background: rgba(255,255,255,0.08);
-          overflow: hidden;
-        }
-
-        .skill-progress-fill {
-          height: 100%;
-          border-radius: 999px;
-          transition: width 0.8s ease;
-        }
-
-        .skill-mini-tags {
-          display: flex;
-          gap: 7px;
-          flex-wrap: wrap;
-          margin-top: 9px;
-        }
-
-        .skill-mini-tags span {
-          font-family: 'DM Sans', sans-serif;
-          font-size: 10px;
-          color: rgba(255,255,255,0.58);
-          background: rgba(255,255,255,0.07);
-          border: 1px solid rgba(255,255,255,0.12);
-          padding: 4px 8px;
-          border-radius: 999px;
-          font-weight: 800;
-        }
-
-        .skill-reason {
-          margin: 9px 0 0;
-          font-family: 'DM Sans', sans-serif;
-          font-size: 11px;
-          line-height: 1.55;
-        }
-
-        .owned-card {
-          margin-bottom: 14px;
-        }
-
-        .owned-list {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 9px;
-        }
-
-        .owned-list span {
-          padding: 9px 12px;
-          border-radius: 999px;
-          background: rgba(61,186,116,0.14);
-          border: 1px solid rgba(61,186,116,0.26);
-          font-family: 'DM Sans', sans-serif;
-          font-size: 12px;
-          color: rgba(255,255,255,0.86);
-          font-weight: 800;
-        }
-
-        .skill-cta-card {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) auto;
-          align-items: center;
-          gap: 16px;
-          padding: 18px;
-          background:
-            linear-gradient(135deg, rgba(45,140,94,0.24), rgba(61,186,116,0.08)),
-            rgba(255,255,255,0.06);
-        }
-
-        .skill-cta-card p {
-          margin-top: 6px;
-        }
-
-        .skill-cta-card button {
-          border: none;
-          border-radius: 16px;
-          background: #3dba74;
-          color: white;
-          font-family: 'DM Sans', sans-serif;
-          font-size: 14px;
-          font-weight: 900;
-          cursor: pointer;
-          padding: 14px 20px;
-          min-height: 48px;
-          box-shadow: 0 14px 34px rgba(45,140,94,0.28);
-          white-space: nowrap;
-          transition: transform 0.2s, background 0.2s;
-        }
-
-        .skill-cta-card button:hover {
-          background: #45c77f;
-          transform: translateY(-1px);
-        }
-
-        @keyframes skillSlideUp {
+        @keyframes slideUp {
           from {
             opacity: 0;
             transform: translateY(18px);
@@ -975,125 +885,20 @@ export default function SkillGapPage() {
           }
         }
 
-        @media (max-width: 860px) {
-          .skill-overview-card,
-          .skill-grid,
-          .skill-cta-card {
-            grid-template-columns: 1fr;
+        @media (max-width: 760px) {
+          div[style*="grid-template-columns: 1fr 1fr 1fr"] {
+            grid-template-columns: 1fr !important;
           }
 
-          .skill-cta-card button {
-            width: 100%;
-          }
-        }
-
-        @media (max-width: 560px) {
-          .skill-navbar {
-            grid-template-columns: 1fr auto;
-            padding: 12px 16px;
+          div[style*="grid-template-columns: 1fr 1fr"] {
+            grid-template-columns: 1fr !important;
           }
 
-          .skill-logo-wrap {
-            transform: scale(0.92);
-            transform-origin: left center;
-          }
-
-          .skill-nav-pill {
-            display: none;
-          }
-
-          .skill-nav-back {
-            font-size: 12px;
-          }
-
-          .skill-main {
-            padding: 24px 12px 38px;
-            overflow-y: auto;
-          }
-
-          .skill-hero {
-            margin-bottom: 18px;
-          }
-
-          .skill-hero-badge {
-            font-size: 11px;
-            padding: 7px 13px;
-            margin-bottom: 14px;
-          }
-
-          .skill-hero-icon {
-            width: 56px;
-            height: 56px;
-            border-radius: 18px;
-            font-size: 25px;
-          }
-
-          .skill-hero h1 {
-            font-size: 34px;
-          }
-
-          .skill-hero p {
-            font-size: 13px;
-          }
-
-          .skill-overview-card,
-          .skill-summary-card,
-          .skill-section-card,
-          .skill-cta-card {
-            border-radius: 20px;
-          }
-
-          .skill-score-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .skill-score-card {
-            display: grid;
-            grid-template-columns: auto 1fr auto;
-            align-items: center;
-            text-align: left;
-            gap: 12px;
-          }
-
-          .skill-score-card > span {
-            margin: 0;
-          }
-
-          .skill-score-card p {
-            font-size: 24px;
-          }
-
-          .skill-card-heading > span,
-          .skill-section-head > span {
-            width: 38px;
-            height: 38px;
-            border-radius: 13px;
-            font-size: 18px;
-          }
-
-          .skill-card-heading h3,
-          .skill-section-head h3,
-          .skill-cta-card h3 {
-            font-size: 16px;
-          }
-
-          .skill-pill-row span,
-          .skill-summary-tags span {
-            font-size: 11px;
-          }
-        }
-
-        @media (max-width: 360px) {
-          .skill-hero h1 {
-            font-size: 31px;
-          }
-
-          .skill-overview-copy h2 {
-            font-size: 28px;
+          div[style*="grid-template-columns: 1fr auto"] {
+            grid-template-columns: 1fr !important;
           }
         }
       `}</style>
     </div>
   );
 }
-
