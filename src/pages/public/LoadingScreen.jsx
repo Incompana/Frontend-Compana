@@ -1,8 +1,11 @@
 // src/pages/public/LoadingScreen.jsx
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Logo, StarField } from "../../components/Shared";
 
 const SKIP_LOADING_EVENT = "compana:skip-loading";
+const READY_REDIRECT_DELAY_MS = 800;
+const MANUAL_READY_DELAY_MS = 3000;
 
 const QUOTES = [
   {
@@ -40,6 +43,8 @@ export default function LoadingScreen({
   onSkip,
   onDone,
 }) {
+  const navigate = useNavigate();
+
   const [activeQuote, setActiveQuote] = useState(0);
   const [fade, setFade] = useState(true);
   const [skipping, setSkipping] = useState(false);
@@ -56,6 +61,25 @@ export default function LoadingScreen({
 
     return () => clearInterval(interval);
   }, []);
+
+  /*
+    Fallback penting:
+    Kalau user menekan tombol Back dari /hasil-analisis ke /loading,
+    loading screen tidak akan stuck. Kalau hasil analysis sudah siap,
+    otomatis balik lagi ke /hasil-analisis dengan replace.
+  */
+  useEffect(() => {
+    const isAnalysisReady =
+      sessionStorage.getItem("assessmentAnalysisReady") === "true";
+
+    if (!isAnalysisReady) return;
+
+    const timeout = setTimeout(() => {
+      navigate("/hasil-analisis", { replace: true });
+    }, READY_REDIRECT_DELAY_MS);
+
+    return () => clearTimeout(timeout);
+  }, [navigate]);
 
   useEffect(() => {
     if (!onDone) return;
@@ -82,6 +106,19 @@ export default function LoadingScreen({
     setSkipping(true);
 
     window.dispatchEvent(new Event(SKIP_LOADING_EVENT));
+
+    const isAnalysisReady =
+      sessionStorage.getItem("assessmentAnalysisReady") === "true";
+
+    /*
+      Kalau user masuk lagi ke /loading setelah hasil sudah siap,
+      tombol lewati tetap terasa proses sebentar, lalu kembali ke hasil.
+    */
+    if (isAnalysisReady) {
+      setTimeout(() => {
+        navigate("/hasil-analisis", { replace: true });
+      }, MANUAL_READY_DELAY_MS);
+    }
 
     if (onSkip) {
       onSkip();
@@ -185,8 +222,8 @@ export default function LoadingScreen({
 
           <p className="loading-note">
             Compana sedang memetakan target role, skill gap, dan action plan
-            pertamamu. Kalau hasil AI sudah siap, tombol lewati akan langsung
-            membawamu ke halaman hasil.
+            pertamamu. Kalau hasil AI sudah siap, kamu akan masuk ke halaman
+            hasil secara otomatis.
           </p>
         </section>
       </main>

@@ -6,24 +6,47 @@ import { useAssessment } from "../../context/AssessmentContext";
 import api from "../../api/axios";
 
 const MIN_LOADING_TIME_MS = 16000;
+const SKIP_LOADING_DELAY_MS = 3000;
 const SKIP_LOADING_EVENT = "compana:skip-loading";
 
 const waitForMinimumLoading = (ms) =>
   new Promise((resolve) => {
     let isDone = false;
+    let skipTimer = null;
 
     const finish = () => {
       if (isDone) return;
 
       isDone = true;
-      window.removeEventListener(SKIP_LOADING_EVENT, finish);
-      clearTimeout(timer);
+      window.removeEventListener(SKIP_LOADING_EVENT, handleSkip);
+      clearTimeout(mainTimer);
+
+      if (skipTimer) {
+        clearTimeout(skipTimer);
+      }
+
       resolve();
     };
 
-    const timer = setTimeout(finish, ms);
+    const handleSkip = () => {
+      if (isDone) return;
 
-    window.addEventListener(SKIP_LOADING_EVENT, finish, { once: true });
+      clearTimeout(mainTimer);
+
+      if (skipTimer) {
+        clearTimeout(skipTimer);
+      }
+
+      /*
+        Kalau user klik Lewati, jangan langsung pindah.
+        Tahan sebentar agar terasa ada proses "menyiapkan hasil".
+      */
+      skipTimer = setTimeout(finish, SKIP_LOADING_DELAY_MS);
+    };
+
+    const mainTimer = setTimeout(finish, ms);
+
+    window.addEventListener(SKIP_LOADING_EVENT, handleSkip, { once: true });
   });
 
 const QUESTIONS = [
@@ -166,12 +189,21 @@ export default function AssessmentPage() {
 
       const payload = buildPayload(updatedDraft.answers);
 
+      /*
+        Reset penanda hasil siap sebelum masuk loading.
+        Nanti di-set lagi setelah AI selesai agar halaman loading
+        tidak stuck kalau user back dari /hasil-analisis.
+      */
+      sessionStorage.removeItem("assessmentAnalysisReady");
+      sessionStorage.removeItem("assessmentAnalysisUpdatedAt");
+
       navigate("/loading");
 
       /*
-        Request AI tetap langsung berjalan, tapi halaman loading dipertahankan
-        minimal 16 detik. Kalau user menekan tombol "Lewati", delay ini
-        dipotong dan app akan lanjut setelah response AI siap.
+        Request AI tetap langsung berjalan.
+        Loading minimal 16 detik, tetapi bisa dipotong lewat tombol Lewati.
+        Kalau tombol Lewati diklik, tetap ada delay 3 detik agar tidak terasa
+        pindah mendadak.
       */
       const [response] = await Promise.all([
         api.post("/assessments/analyze", payload),
@@ -189,10 +221,22 @@ export default function AssessmentPage() {
         aiResult: data.ai,
       }));
 
-      navigate("/hasil-analisis");
+      sessionStorage.setItem("assessmentAnalysisReady", "true");
+      sessionStorage.setItem("assessmentAnalysisUpdatedAt", String(Date.now()));
+
+      /*
+        replace: true supaya tombol Back tidak membawa user ke loading screen
+        yang sudah selesai.
+      */
+      navigate("/hasil-analisis", { replace: true });
     } catch (error) {
       console.log(error.response?.data || error.message);
+
+      sessionStorage.removeItem("assessmentAnalysisReady");
+      sessionStorage.removeItem("assessmentAnalysisUpdatedAt");
+
       alert("Gagal analyze assessment");
+      navigate("/assessment", { replace: true });
     } finally {
       setSubmitting(false);
     }
