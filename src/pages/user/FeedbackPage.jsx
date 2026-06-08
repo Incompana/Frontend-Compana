@@ -112,11 +112,6 @@ export default function FeedbackPage() {
     navigate("/task-detail");
   };
 
-  const handleImprove = () => {
-    toast("Fitur perbaiki dengan AI akan dibuat nanti.");
-    navigate("/task-detail");
-  };
-
   if (loading) {
     return (
       <div
@@ -796,29 +791,10 @@ export default function FeedbackPage() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: isPassed ? "1fr 1fr" : "1fr auto auto",
+              gridTemplateColumns: "1fr 1fr",
               gap: "12px",
             }}
           >
-            {!isPassed && (
-              <button
-                onClick={handleImprove}
-                style={{
-                  padding: "14px",
-                  borderRadius: "12px",
-                  border: "none",
-                  background: "rgba(255,255,255,0.1)",
-                  color: "rgba(255,255,255,0.7)",
-                  fontFamily: "'DM Sans', sans-serif",
-                  fontSize: "14px",
-                  fontWeight: 500,
-                  cursor: "pointer",
-                }}
-              >
-                Perbaiki dengan AI →
-              </button>
-            )}
-
             {!isPassed && (
               <button
                 onClick={handleSubmitAgain}
@@ -891,10 +867,6 @@ export default function FeedbackPage() {
 
         @media (max-width: 760px) {
           div[style*="grid-template-columns: 1fr 1fr"] {
-            grid-template-columns: 1fr !important;
-          }
-
-          div[style*="grid-template-columns: 1fr auto auto"] {
             grid-template-columns: 1fr !important;
           }
         }

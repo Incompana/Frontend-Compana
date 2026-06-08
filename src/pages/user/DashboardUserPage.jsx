@@ -6,6 +6,7 @@ import { logout } from "../../utils/auth";
 import api from "../../api/axios";
 import toast from "react-hot-toast";
 import LogoutConfirmModal from "../../components/LogoutConfirmModal";
+import CertificatePrint from "../../components/CertificatePrint";
 
 const getStoredUser = () => {
   const savedUser = localStorage.getItem("user");
@@ -110,6 +111,7 @@ export default function DashboardUserPage() {
   const [progressData, setProgressData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showCertificate, setShowCertificate] = useState(false);
 
   const user = useMemo(() => getStoredUser(), []);
   const displayName = getDisplayName(user);
@@ -168,13 +170,42 @@ export default function DashboardUserPage() {
 
   const totalSteps = steps.length;
 
-  const overallPct =
-    totalSteps > 0
-      ? Math.round((completedSteps / totalSteps) * 100)
-      : progressData?.progressPercentage || 0;
+  const progressCompletedTasks = Number(
+    progressData?.completedTasks ?? progressData?.completed_tasks ?? 0
+  );
 
-  const totalXp = completedSteps * 120;
-  const allCompleted = totalSteps > 0 && completedSteps === totalSteps;
+  const progressTotalTasks = Number(
+    progressData?.totalTasks ?? progressData?.total_tasks ?? 0
+  );
+
+  const progressPercentage = Number(
+    progressData?.progressPercentage ?? progressData?.progress_percentage ?? 0
+  );
+
+  const certificateCompletedTasks =
+    totalSteps > 0 ? completedSteps : progressCompletedTasks;
+
+  const certificateTotalTasks =
+    totalSteps > 0 ? totalSteps : progressTotalTasks;
+
+  const overallPct =
+    certificateTotalTasks > 0
+      ? Math.round((certificateCompletedTasks / certificateTotalTasks) * 100)
+      : progressPercentage;
+
+  const totalXp = certificateCompletedTasks * 120;
+
+  const allCompleted =
+    certificateTotalTasks > 0 &&
+    certificateCompletedTasks >= certificateTotalTasks;
+
+  const targetRole =
+    actionPlan?.targetRole ||
+    actionPlan?.target_role ||
+    actionPlan?.role ||
+    progressData?.targetRole ||
+    progressData?.target_role ||
+    "Frontend Developer";
 
   const activeTask = useMemo(() => {
     if (allCompleted) return null;
@@ -221,6 +252,15 @@ export default function DashboardUserPage() {
     routerNavigate("/task-detail");
   };
 
+  const handleOpenCertificate = () => {
+    if (!allCompleted) {
+      toast.error("Selesaikan semua task dulu untuk membuka sertifikat.");
+      return;
+    }
+
+    setShowCertificate(true);
+  };
+
   const renderAvatar = (size = "normal") => (
     <div className={`dashboard-avatar ${size === "small" ? "small" : ""}`}>
       {avatarUrl ? (
@@ -234,12 +274,12 @@ export default function DashboardUserPage() {
   const stats = [
     {
       icon: "🏆",
-      value: `${overallPct}%`,
+      value: `${Math.min(100, Math.max(0, overallPct))}%`,
       label: "Overall Progress",
     },
     {
       icon: "✓",
-      value: `${completedSteps}/${totalSteps || 0}`,
+      value: `${certificateCompletedTasks}/${certificateTotalTasks || 0}`,
       label: "Task Selesai",
     },
     {
@@ -248,6 +288,17 @@ export default function DashboardUserPage() {
       label: "Total XP",
     },
   ];
+
+  if (showCertificate) {
+    return (
+      <CertificatePrint
+        targetRole={targetRole}
+        completedTasks={certificateCompletedTasks}
+        totalTasks={certificateTotalTasks}
+        onBack={() => setShowCertificate(false)}
+      />
+    );
+  }
 
   return (
     <div className="dashboard-page">
@@ -361,21 +412,45 @@ export default function DashboardUserPage() {
                 <p>🚀 Perjalanan Karier</p>
                 <span>
                   {allCompleted
-                    ? "Semua task selesai. Mantap!"
-                    : totalSteps > 0
-                    ? `${completedSteps} dari ${totalSteps} task sudah selesai.`
+                    ? "Semua task selesai. Sertifikat sudah bisa dicetak!"
+                    : certificateTotalTasks > 0
+                    ? `${certificateCompletedTasks} dari ${certificateTotalTasks} task sudah selesai.`
                     : "Mulai action plan untuk membuka task pertamamu."}
                 </span>
               </div>
 
-              <strong>{loading ? "..." : `${overallPct}%`}</strong>
+              <strong>{loading ? "..." : `${Math.min(100, Math.max(0, overallPct))}%`}</strong>
             </div>
 
             <div className="dashboard-progress-track">
               <div
                 className="dashboard-progress-fill"
-                style={{ width: `${Math.min(100, Math.max(0, overallPct))}%` }}
+                style={{
+                  width: `${Math.min(100, Math.max(0, overallPct))}%`,
+                }}
               />
+            </div>
+
+            <div className="dashboard-certificate-row">
+              <div>
+                <p>🎓 Sertifikat Karier</p>
+                <span>
+                  {allCompleted
+                    ? "Kamu sudah memenuhi syarat untuk mencetak sertifikat."
+                    : "Sertifikat akan terbuka setelah semua task selesai."}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleOpenCertificate}
+                disabled={!allCompleted || loading}
+                className={`dashboard-certificate-button ${
+                  allCompleted ? "unlocked" : "locked"
+                }`}
+              >
+                {allCompleted ? "Cetak Sertifikat" : "Terkunci"}
+              </button>
             </div>
           </article>
 
@@ -806,6 +881,59 @@ export default function DashboardUserPage() {
           transition: width 0.5s ease;
         }
 
+        .dashboard-certificate-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          margin-top: 16px;
+          padding-top: 14px;
+          border-top: 1px solid rgba(45,140,94,0.14);
+        }
+
+        .dashboard-certificate-row p {
+          font-size: 14px;
+          font-weight: 900;
+          color: #1a3a2a;
+          margin: 0 0 4px;
+        }
+
+        .dashboard-certificate-row span {
+          display: block;
+          font-size: 12px;
+          color: rgba(40,70,55,0.58);
+          line-height: 1.55;
+        }
+
+        .dashboard-certificate-button {
+          border: none;
+          border-radius: 12px;
+          padding: 12px 18px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 13px;
+          font-weight: 900;
+          white-space: nowrap;
+          transition: all 0.2s;
+        }
+
+        .dashboard-certificate-button.unlocked {
+          background: #2d8c5e;
+          color: white;
+          cursor: pointer;
+          box-shadow: 0 12px 26px rgba(45,140,94,0.24);
+        }
+
+        .dashboard-certificate-button.unlocked:hover {
+          background: #3dba74;
+          transform: translateY(-1px);
+        }
+
+        .dashboard-certificate-button.locked {
+          background: rgba(40,70,55,0.12);
+          color: rgba(40,70,55,0.45);
+          cursor: not-allowed;
+        }
+
         .dashboard-grid {
           display: grid;
           grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.85fr);
@@ -1112,6 +1240,15 @@ export default function DashboardUserPage() {
           .dashboard-progress-head {
             flex-direction: column;
             gap: 8px;
+          }
+
+          .dashboard-certificate-row {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          .dashboard-certificate-button {
+            width: 100%;
           }
 
           .dashboard-task-actions {
